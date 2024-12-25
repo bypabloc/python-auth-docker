@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  web:
+    extends:
+      file: docker-compose.yml
+      service: web
+    container_name: app_web_local
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ..:/app:delegated  # Optimización de volumen para mejor rendimiento
+      - /app/__pycache__   # Excluir archivos cache
+      - /app/*/__pycache__ # Excluir archivos cache de subdirectorios
+    environment:
+      - DEBUG=1           # Activar modo debug para desarrollo
+      - PYTHONDONTWRITEBYTECODE=1  # No generar archivos .pyc
+      - PYTHONUNBUFFERED=1         # Output sin buffer
+      - SEND_VERIFICATION_CODE_IN_RESPONSE=1
+    env_file:
+      - .env.local
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    container_name: app_db_local
+    image: postgres:16
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=app_db
+      - POSTGRES_USER=app_user
+      - POSTGRES_PASSWORD=app_password
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app_user -d app_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

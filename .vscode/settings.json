@@ -1,0 +1,49 @@
+{
+  "cSpell.words": [
+    "BBVA",
+    "healthcheck",
+    "isready",
+    "postgres",
+    "postgresql",
+    "PYTHONDONTWRITEBYTECODE",
+    "PYTHONUNBUFFERED",
+    "runserver"
+  ],
+  "faststruct.config": {
+    "debug": true,
+    "exclude": {
+      "folders": [
+        "venv",
+        ".vscode",
+        "__pycache__",
+        "node_modules",
+        ".git",
+        "dist",
+        "build",
+        ".tmp",
+        "out",
+        ".env",
+        ".serverless",
+        "__pycache__"
+      ],
+      "files": ["*.log", "*.lock", "package-lock.json", ".gitignore"],
+      "advanced": {
+        "patterns": ["**/*.min.js", "**/*.generated.*"],
+        "specificFiles": ["src/config/sensitive.json"],
+        "specificFolders": ["src/utils/", "tests/fixtures/"],
+        "regexPatterns": ["src/.*\\.md$", "docs/.*\\.temp\\.*"]
+      }
+    },
+    "excludeContent": {
+      "files": ["*.env", "*.env"],
+      "folders": [],
+      "patterns": [
+        "*.vsix",
+        "**/*.secret.*",
+        "**/.secrets**",
+        "**/*/.env**",
+        ".*env/"
+      ]
+    }
+  }
+}
