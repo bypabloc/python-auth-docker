@@ -60,7 +60,11 @@ class LoginView(APIView):
         # Check if MFA is enabled
         try:
             mfa_config = user.mfa_config
+            print('MFA config:', mfa_config)
+
             if mfa_config.is_enabled:
+                print('MFA enabled')
+
                 # Generate temporary token for MFA
                 token, _ = generate_token_for_user(
                     user, 
@@ -68,25 +72,38 @@ class LoginView(APIView):
                     is_temporary=True
                 )
                 
-                if mfa_config.default_method.name == 'email':
-                    # Send verification code
-                    verification = MFAVerification.objects.create(
-                        user=user,
-                        method=mfa_config.default_method,
-                        code=generate_verification_code(),
-                        expires_at=timezone.now() + timedelta(minutes=10),
-                        session_key=token
-                    )
-                    # Send email with code
-                    send_verification_email(user, 'mfa')
-                
-                return Response({
+                response_data = {
                     'message': 'MFA verification required',
                     'token': token,
                     'requires_verification': True,
                     'verification_type': 'mfa',
                     'mfa_method': mfa_config.default_method.name
-                })
+                }
+                
+                if mfa_config.default_method.name == 'email':
+                    # Generate verification code
+                    code = generate_verification_code()
+                    
+                    # Create verification record
+                    verification = MFAVerification.objects.create(
+                        user=user,
+                        method=mfa_config.default_method,
+                        code=code,
+                        expires_at=timezone.now() + timedelta(minutes=10),
+                        session_key=token
+                    )
+                    
+                    # Send email with code
+                    send_verification_email(user, 'mfa')
+                    
+                    # Include verification info in response if enabled
+                    if settings.SEND_VERIFICATION_CODE_IN_RESPONSE:
+                        response_data['verification'] = {
+                            'code': code,
+                            'expires_at': verification.expires_at
+                        }
+                
+                return Response(response_data)
                 
         except UserMFA.DoesNotExist:
             pass

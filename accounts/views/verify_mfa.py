@@ -63,6 +63,10 @@ class VerifyMFAView(APIView):
                 verified = True
 
             if verified:
+                # Enable MFA
+                mfa_config.is_enabled = True
+                mfa_config.save()
+
                 # Generar token permanente
                 token, _ = generate_token_for_user(
                     user, 

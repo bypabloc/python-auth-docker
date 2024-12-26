@@ -1,6 +1,7 @@
 # Generated manually for initial MFA methods
 
 from django.db import migrations
+from django.db import models
 
 def insert_initial_mfa_methods(apps, schema_editor):
     MFAMethod = apps.get_model('accounts', 'MFAMethod')
@@ -30,5 +31,13 @@ class Migration(migrations.Migration):
         migrations.RunPython(
             insert_initial_mfa_methods,
             remove_initial_mfa_methods
-        )
+        ),
+        migrations.AlterField(
+            model_name='mfaverification',
+            name='session_key',
+            field=models.CharField(
+                help_text='Temporary session key for MFA verification process',
+                max_length=512  # Aumentado para acomodar tokens JWT
+            ),
+        ),
     ]

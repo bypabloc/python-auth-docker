@@ -119,8 +119,15 @@ AWS_SECRET_ACCESS_KEY = os_environ.get('AWS_SECRET_ACCESS_KEY')
 AWS_REGION_NAME = os_environ.get('AWS_REGION_NAME', 'us-east-1')
 AWS_SES_AUTO_THROTTLE = 0.5
 
+SEND_VERIFICATION_CODE_IN_RESPONSE = False
+SEND_EMAIL = True
+
 # Development settings
-SEND_VERIFICATION_CODE_IN_RESPONSE = os_environ.get('SEND_VERIFICATION_CODE_IN_RESPONSE', '0') == '1'
+ENVIRONMENT = os_environ.get('ENVIRONMENT', 'local')
+
+if not ENVIRONMENT == 'local':
+    SEND_VERIFICATION_CODE_IN_RESPONSE = os_environ.get('SEND_VERIFICATION_CODE_IN_RESPONSE', '0') == '1'
+    SEND_EMAIL = os_environ.get('SEND_EMAIL', '0') == '1'
 
 # Security settings
 if not DEBUG:
