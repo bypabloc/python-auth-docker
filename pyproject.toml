@@ -1,0 +1,39 @@
+# pyproject.toml
+[tool.black]
+line-length = 88
+target-version = ['py312']
+include = '\.pyi?$'
+extend-exclude = '''
+# A regex preceded with ^/ will apply only to files and directories
+# in the root of the project.
+^/foo.py  # exclude a file named foo.py in the root of the project
+'''
+
+[tool.ruff]
+# Enable pycodestyle (`E`), Pyflakes (`F`), and import sorting (`I`)
+select = ["E", "F", "I"]
+ignore = []
+
+# Excluir carpetas y archivos
+extend-exclude = [
+    "*/migrations/*",  # Excluir todas las carpetas de migraciones
+    "__pycache__",
+    ".git",
+    ".ruff_cache",
+]
+
+# Igual que Black
+line-length = 88
+indent-width = 4
+
+# Python 3.12
+target-version = "py312"
+
+[tool.ruff.mccabe]
+max-complexity = 10
+
+[tool.ruff.isort]
+known-first-party = ["app", "accounts"]
+
+[tool.ruff.pydocstyle]
+convention = "google"  # Usar el estilo de Google para docstrings

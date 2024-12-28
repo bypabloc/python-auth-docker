@@ -1,0 +1,37 @@
+-r base.in
+
+# Formatting and Linting
+black==24.10.0
+ruff==0.8.4
+pre-commit==4.0.1
+
+# Testing
+pytest==8.3.4
+pytest-django==4.9.0
+pytest-cov==6.0.0
+pytest-mock==3.14.0
+faker==33.1.0
+
+# Debugging
+ipython==8.31.0
+django-debug-toolbar==4.4.6
+ipdb==0.13.13
+
+# Documentation
+mkdocs==1.6.1
+mkdocs-material==9.5.49
+mkdocstrings==0.27.0
+mkdocstrings-python==1.13.0
+
+# Type Checking
+mypy==1.14.0
+django-stubs==5.1.1
+types-requests==2.32.0.20241016
+
+# Development Tools
+pip-tools==7.4.1
+watchdog==6.0.0
+django-extensions==3.2.3
+
+# Pre commit
+pre-commit==4.0.1

@@ -11,5 +11,6 @@ WORKDIR /app
 
 # Instalar dependencias
 COPY requirements/base.in /app/requirements/base.in
+COPY requirements/local.in /app/requirements/local.in
 
-RUN pip install -r requirements/base.in
+RUN pip install -r requirements/local.in

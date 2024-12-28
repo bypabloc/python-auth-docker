@@ -1,10 +1,10 @@
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import include, path
+
 from app.views import HomeView
 
-
 urlpatterns = [
-    path('', HomeView.as_view(), name='home'),  # Ruta raíz
-    path('admin/', admin.site.urls),
-    path('api/', include('accounts.urls')),
+    path("", HomeView.as_view(), name="home"),  # Ruta raíz
+    path("admin/", admin.site.urls),
+    path("api/", include("accounts.urls")),
 ]

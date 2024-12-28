@@ -1,4 +1,30 @@
 {
+  // Formateo general
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.organizeImports": "explicit"
+  },
+
+  // Python específico
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "explicit",
+      "source.organizeImports": "explicit"
+    }
+  },
+
+  // Configuración de Ruff
+  "ruff.organizeImports": true,
+  "ruff.fixAll": true,
+
+  // Black
+  "black-formatter.args": ["--line-length", "88"],
+
+  // Python general
+  "python.analysis.typeCheckingMode": "basic",
   "cSpell.words": [
     "BBVA",
     "healthcheck",

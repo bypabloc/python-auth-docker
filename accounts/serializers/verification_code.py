@@ -1,6 +1,4 @@
-from rest_framework.serializers import Serializer
-from rest_framework.serializers import CharField
-from rest_framework.serializers import EmailField
+from rest_framework.serializers import CharField, EmailField, Serializer
 
 
 class VerificationCode(Serializer):

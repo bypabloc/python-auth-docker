@@ -1,20 +1,18 @@
 from datetime import timedelta
 
-from rest_framework.views import APIView
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from django.conf import settings
 from django.contrib.auth import authenticate
 from django.utils import timezone
-from django.conf import settings
+from rest_framework import status
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from accounts.models import UserMFA
-from accounts.models import MFAVerification
-from accounts.serializers.user import User as UserSerializer
+from accounts.models import MFAVerification, UserMFA
 from accounts.serializers.login import Login as LoginSerializer
+from accounts.serializers.user import User as UserSerializer
+from accounts.utils.email import generate_verification_code, send_verification_email
 from accounts.utils.generate_token_for_user import generate_token_for_user
-from accounts.utils.email import send_verification_email
-from accounts.utils.email import generate_verification_code
 
 
 class LoginView(APIView):
@@ -23,101 +21,92 @@ class LoginView(APIView):
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response(
-                serializer.errors, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
         user = authenticate(
-            email=serializer.validated_data['email'],
-            password=serializer.validated_data['password']
+            email=serializer.validated_data["email"],
+            password=serializer.validated_data["password"],
         )
-        
+
         if not user:
-            return Response({
-                'error': 'Invalid credentials'
-            }, status=status.HTTP_401_UNAUTHORIZED)
-            
+            return Response(
+                {"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
+            )
+
         # Check if user is verified
         if not user.is_verified:
             # For unverified users, send verification code and temporary token
             token, _ = generate_token_for_user(user, request, is_temporary=True)
-            data_verify_email = send_verification_email(user, 'login')
-            
+            data_verify_email = send_verification_email(user, "login")
+
             response_data = {
-                'message': 'Please verify your email first.',
-                'user': UserSerializer(user).data,
-                'token': token,
-                'requires_verification': True,
-                'verification_type': 'email'
+                "message": "Please verify your email first.",
+                "user": UserSerializer(user).data,
+                "token": token,
+                "requires_verification": True,
+                "verification_type": "email",
             }
-            
+
             if settings.SEND_VERIFICATION_CODE_IN_RESPONSE:
-                response_data['verification'] = data_verify_email
-                
+                response_data["verification"] = data_verify_email
+
             return Response(response_data)
-        
+
         # Check if MFA is enabled
         try:
             mfa_config = user.mfa_config
-            print('MFA config:', mfa_config)
+            print("MFA config:", mfa_config)
 
             if mfa_config.is_enabled:
-                print('MFA enabled')
+                print("MFA enabled")
 
                 # Generate temporary token for MFA
-                token, _ = generate_token_for_user(
-                    user, 
-                    request, 
-                    is_temporary=True
-                )
-                
+                token, _ = generate_token_for_user(user, request, is_temporary=True)
+
                 response_data = {
-                    'message': 'MFA verification required',
-                    'token': token,
-                    'requires_verification': True,
-                    'verification_type': 'mfa',
-                    'mfa_method': mfa_config.default_method.name
+                    "message": "MFA verification required",
+                    "token": token,
+                    "requires_verification": True,
+                    "verification_type": "mfa",
+                    "mfa_method": mfa_config.default_method.name,
                 }
-                
-                if mfa_config.default_method.name == 'email':
+
+                if mfa_config.default_method.name == "email":
                     # Generate verification code
                     code = generate_verification_code()
-                    
+
                     # Create verification record
                     verification = MFAVerification.objects.create(
                         user=user,
                         method=mfa_config.default_method,
                         code=code,
                         expires_at=timezone.now() + timedelta(minutes=10),
-                        session_key=token
+                        session_key=token,
                     )
-                    
+
                     # Send email with code
-                    send_verification_email(user, 'mfa')
-                    
+                    send_verification_email(user, "mfa")
+
                     # Include verification info in response if enabled
                     if settings.SEND_VERIFICATION_CODE_IN_RESPONSE:
-                        response_data['verification'] = {
-                            'code': code,
-                            'expires_at': verification.expires_at
+                        response_data["verification"] = {
+                            "code": code,
+                            "expires_at": verification.expires_at,
                         }
-                
+
                 return Response(response_data)
-                
+
         except UserMFA.DoesNotExist:
             pass
-            
+
         # Si no hay MFA o no está habilitado, generar token permanente
-        token, user_token = generate_token_for_user(
-            user, 
-            request, 
-            is_temporary=False
+        token, user_token = generate_token_for_user(user, request, is_temporary=False)
+
+        return Response(
+            {
+                "message": "Login successful",
+                "user": UserSerializer(user).data,
+                "token": token,
+                "requires_verification": False,
+            }
         )
-        
-        return Response({
-            'message': 'Login successful',
-            'user': UserSerializer(user).data,
-            'token': token,
-            'requires_verification': False
-        })

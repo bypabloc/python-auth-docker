@@ -5,6 +5,9 @@ services:
     extends:
       file: docker-compose.yml
       service: web
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.local
     container_name: app_web_local
     command: python manage.py runserver 0.0.0.0:8000
     volumes:

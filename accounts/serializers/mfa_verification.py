@@ -1,5 +1,4 @@
-from rest_framework.serializers import Serializer
-from rest_framework.serializers import CharField
+from rest_framework.serializers import CharField, Serializer
 
 
 class MFAVerification(Serializer):

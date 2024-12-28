@@ -1,8 +1,6 @@
-from rest_framework.serializers import Serializer
-from rest_framework.serializers import EmailField
-from rest_framework.serializers import CharField
+from rest_framework.serializers import CharField, EmailField, Serializer
 
 
 class Login(Serializer):
     email = EmailField()
-    password = CharField(style={'input_type': 'password'})
+    password = CharField(style={"input_type": "password"})
