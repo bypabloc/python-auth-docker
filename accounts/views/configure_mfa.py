@@ -11,7 +11,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from accounts.models import MFAVerification, UserMFA
+from accounts.models.mfa_verification import MFAVerification
+from accounts.models.user_mfa import UserMFA
 from accounts.serializers.user_mfa import UserMFA as UserMFASerializer
 from accounts.utils.email import generate_verification_code
 
@@ -33,7 +34,7 @@ class ConfigureMFAView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        method = serializer.validated_data["default_method"]
+        method = request.data.get("default_method")
         mfa_config, created = UserMFA.objects.get_or_create(
             user=request.user, defaults={"is_enabled": False}
         )
@@ -94,8 +95,10 @@ class ConfigureMFAView(APIView):
             )
 
             # Enviar email con el código
-
-            response_data = {"message": "Verification code sent to your email"}
+            response_data = {
+                "message": "Verification code sent to your email",
+                "verification": None,
+            }
 
             if settings.SEND_VERIFICATION_CODE_IN_RESPONSE:
                 response_data["verification"] = {

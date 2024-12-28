@@ -8,7 +8,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from accounts.models import MFAVerification, UserMFA
+from accounts.models.mfa_verification import MFAVerification
+from accounts.models.user_mfa import UserMFA
 from accounts.serializers.login import Login as LoginSerializer
 from accounts.serializers.user import User as UserSerializer
 from accounts.utils.email import generate_verification_code, send_verification_email
@@ -23,9 +24,12 @@ class LoginView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+        email = request.data.get("email")
+        password = request.data.get("password")
+
         user = authenticate(
-            email=serializer.validated_data["email"],
-            password=serializer.validated_data["password"],
+            email=email,
+            password=password,
         )
 
         if not user:
@@ -55,11 +59,8 @@ class LoginView(APIView):
         # Check if MFA is enabled
         try:
             mfa_config = user.mfa_config
-            print("MFA config:", mfa_config)
 
             if mfa_config.is_enabled:
-                print("MFA enabled")
-
                 # Generate temporary token for MFA
                 token, _ = generate_token_for_user(user, request, is_temporary=True)
 

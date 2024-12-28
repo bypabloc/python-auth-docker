@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from accounts.models import UserToken
+from accounts.models.user_token import UserToken
 
 
 class LogoutView(APIView):

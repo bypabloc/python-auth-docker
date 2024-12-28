@@ -33,11 +33,13 @@ class VerifyCodeView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+        code = request.data.get("code")
+
         user = request.user
         verification = (
             VerificationCode.objects.filter(
                 user=user,
-                code=serializer.validated_data["code"],
+                code=code,
                 is_used=False,
                 expires_at__gt=timezone.now(),
             )

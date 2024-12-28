@@ -5,7 +5,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from accounts.models import MFAVerification, UserMFA
+from accounts.models.mfa_verification import MFAVerification
+from accounts.models.user_mfa import UserMFA
 from accounts.serializers.mfa_verification import (
     MFAVerification as MFAVerificationSerializer,
 )
@@ -22,7 +23,7 @@ class VerifyMFAView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         user = request.user
-        code = serializer.validated_data["code"]
+        code = request.data.get("code")
 
         try:
             mfa_config = user.mfa_config

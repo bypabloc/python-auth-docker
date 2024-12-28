@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from accounts.models import VerificationCode
+from accounts.models.verification_code import VerificationCode
 from accounts.utils.email import send_verification_email
 
 
@@ -34,7 +34,10 @@ class ResendCodeView(APIView):
         # Generar y enviar nuevo código
         data_verify_email = send_verification_email(request.user, code_type.type)
 
-        response_data = {"message": "New verification code sent successfully"}
+        response_data = {
+            "verification": None,
+            "message": "New verification code sent successfully",
+        }
 
         # Solo incluir el código en entorno local
         if settings.SEND_VERIFICATION_CODE_IN_RESPONSE:

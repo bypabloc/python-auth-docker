@@ -23,7 +23,7 @@ Install these extensions for the best development experience:
 1. Clone the repository:
 
 ```bash
-git clone <repository-url>
+git clone git@github.com:bypabloc/python-auth-docker.git
 cd python-auth-docker
 ```
 
@@ -81,10 +81,23 @@ python manage.py runserver
 
 ## Development Setup
 
-1. Install pre-commit hooks:
+1. Install and configure pre-commit hooks:
 
 ```bash
+# Install pre-commit hooks
 pre-commit install
+
+# Run pre-commit hooks against all files
+pre-commit run --all-files
+
+# Update pre-commit hooks to the latest versions
+pre-commit autoupdate
+```
+
+You can skip pre-commit hooks if needed (not recommended but useful in emergencies):
+
+```bash
+git commit -m "your commit message" --no-verify
 ```
 
 2. Configure VS Code settings (`settings.json`):
