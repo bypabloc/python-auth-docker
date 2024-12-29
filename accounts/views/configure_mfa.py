@@ -15,7 +15,7 @@ from rest_framework.views import APIView
 
 from accounts.models.mfa_verification import MFAVerification
 from accounts.models.user_mfa import UserMFA
-from accounts.serializers.user_mfa import UserMFA as UserMFASerializer
+from accounts.serializers.user_mfa import UserMFASerializer
 from accounts.utils.email import generate_verification_code
 
 
@@ -38,7 +38,7 @@ class ConfigureMFAView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        method = request.data.get("default_method")
+        method = serializer.validated_data.get("default_method")
         mfa_config, created = UserMFA.objects.get_or_create(
             user=request.user, defaults={"is_enabled": False}
         )

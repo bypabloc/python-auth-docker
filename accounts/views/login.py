@@ -30,10 +30,11 @@ class LoginView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         email = request.data.get("email")
+        username = request.data.get("username")
         password = request.data.get("password")
 
         user = authenticate(
-            email=email,
+            username=email or username,
             password=password,
         )
 

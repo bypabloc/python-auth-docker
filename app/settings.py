@@ -112,6 +112,10 @@ if os_environ.get("RATE_LIMIT_ENABLED", "0") == "1":
 
 # Custom user model
 AUTH_USER_MODEL = "accounts.CustomUser"
+AUTHENTICATION_BACKENDS = [
+    "accounts.auth.email_backend.EmailBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
 
 # Email settings
 EMAIL_BACKEND = os_environ.get(
@@ -131,7 +135,7 @@ SEND_EMAIL = True
 # Development settings
 ENVIRONMENT = os_environ.get("ENVIRONMENT", "local")
 
-if not ENVIRONMENT == "local":
+if ENVIRONMENT == "local":
     SEND_VERIFICATION_CODE_IN_RESPONSE = (
         os_environ.get("SEND_VERIFICATION_CODE_IN_RESPONSE", "0") == "1"
     )

@@ -12,6 +12,7 @@ class User(ModelSerializer):
         """Meta class for User."""
 
         model = CustomUser
+        fields = ("id", "email", "username", "password", "is_verified")
         extra_kwargs: ClassVar[dict] = {
             "password": {"write_only": True},
             "is_verified": {"read_only": True},

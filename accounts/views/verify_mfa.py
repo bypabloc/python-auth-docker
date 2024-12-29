@@ -1,8 +1,7 @@
-from datetime import datetime
-from typing import ClassVar, TypeVar
+from typing import ClassVar
 
-import pyotp
 from django.utils import timezone
+from pyotp import TOTP
 from rest_framework import status
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.request import Request
@@ -18,8 +17,6 @@ from accounts.serializers.mfa_verification import (
 )
 from accounts.utils.generate_token_for_user import generate_token_for_user
 
-T = TypeVar("T", bound=CustomUser)
-
 
 class VerifyMFAView(APIView):
     """Handle MFA verification during login process."""
@@ -33,7 +30,8 @@ class VerifyMFAView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         user = request.user
-        code: str = str(request.data.get("code", ""))
+        data: dict = request.data
+        code: str = str(data.get("code", ""))
 
         try:
             mfa_config: UserMFA = user.mfa_config
@@ -84,7 +82,7 @@ class VerifyMFAView(APIView):
             return True
 
         if len(code) == 6 and mfa_config.otp_secret:
-            totp = pyotp.TOTP(mfa_config.otp_secret)
+            totp = TOTP(mfa_config.otp_secret)
             return totp.verify(code)
 
         return False
@@ -118,6 +116,6 @@ class VerifyMFAView(APIView):
             )
 
         verification.is_verified = True
-        verification.verified_at = datetime.now(timezone.utc)
+        verification.verified_at = timezone.now()
         verification.save()
         return True

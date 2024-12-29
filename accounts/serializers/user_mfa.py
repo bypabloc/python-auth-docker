@@ -12,6 +12,17 @@ class UserMFASerializer(ModelSerializer):
         """Meta class for UserMFASerializer."""
 
         model = UserMFA
+        fields = (
+            "id",
+            "user",
+            "is_enabled",
+            "default_method",
+            "otp_secret",
+            "backup_codes",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ("id", "user", "created_at", "updated_at", "otp_secret")
         extra_kwargs: ClassVar[dict] = {"default_method": {"required": True}}
 
     def validate(self, data: dict) -> dict:

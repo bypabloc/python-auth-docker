@@ -16,7 +16,7 @@ class CustomUser(AbstractUser):
         default=False, help_text=_("Indicates if user has configured MFA")
     )
 
-    REQUIRED_FIELDS: ClassVar[list[str]] = ["username"]
+    REQUIRED_FIELDS: ClassVar[list[str]] = []
 
     class Meta:
         """Meta options for CustomUser model."""
