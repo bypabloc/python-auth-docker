@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import timedelta
 from typing import ClassVar
 
@@ -5,7 +7,8 @@ from django.conf import settings
 from django.contrib.auth import authenticate
 from django.utils import timezone
 from rest_framework import status
-from rest_framework.permissions import AllowAny, BasePermission
+from rest_framework.permissions import AllowAny
+from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -14,7 +17,8 @@ from accounts.models.mfa_verification import MFAVerification
 from accounts.models.user_mfa import UserMFA
 from accounts.serializers.login import Login as LoginSerializer
 from accounts.serializers.user import User as UserSerializer
-from accounts.utils.email import generate_verification_code, send_verification_email
+from accounts.utils.email import generate_verification_code
+from accounts.utils.email import send_verification_email
 from accounts.utils.generate_token_for_user import generate_token_for_user
 
 

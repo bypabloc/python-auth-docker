@@ -24,6 +24,10 @@ select = [
     "T",   # flake8-print
     "Q",   # flake8-quotes
     "RUF", # Ruff-specific rules
+    "PLC", # pylint-convention
+    "PLE", # pylint-error
+    "PLR", # pylint-refactor
+    "PLW", # pylint-warning
 ]
 
 # Ignorar reglas específicas
@@ -63,6 +67,45 @@ known-first-party = ["app", "accounts"]
 [tool.ruff.lint]
 # Use Google-style docstrings.
 pydocstyle = {convention = "google"}
+
+# Reglas habilitadas
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "D",   # pydocstring
+    "UP",  # pyupgrade
+    "ANN", # flake8-annotations (type hints)
+    "B",   # flake8-bugbear
+    "C",   # flake8-comprehensions
+    "T",   # flake8-print
+    "Q",   # flake8-quotes
+    "RUF", # Ruff-specific rules
+    "PLC", # pylint-convention
+    "PLE", # pylint-error
+    "PLR", # pylint-refactor
+    "PLW", # pylint-warning
+]
+
+# Reglas ignoradas
+ignore = [
+    "D100",  # Missing docstring in public module
+    "PLC0414", # Useless import alias - permitimos alias aunque el nombre sea similar
+]
+
+unfixable = ["F401"]  # Never try to fix unused imports
+
+[tool.ruff.lint.isort]
+# Configuración de organización de imports
+force-single-line = true  # Forzar una importación por línea
+required-imports = ["from __future__ import annotations"]  # Imports requeridos
+combine-as-imports = false  # No combinar imports con as
+force-wrap-aliases = true  # Forzar wrap de aliases
+
+# Definir patrones permitidos y prohibidos para importaciones
+[tool.ruff.lint.extend-per-file-ignores]
+"__init__.py" = ["F401", "D100"]  # Permitir imports no usados en __init__.py
 
 [tool.ruff.lint.per-file-ignores]
 "utils/logger.py" = ["T201"]  # Permitir print() en el logger

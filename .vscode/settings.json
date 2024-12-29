@@ -41,6 +41,7 @@
     "debug": true,
     "exclude": {
       "folders": [
+        ".ruff_cache",
         "venv",
         ".vscode",
         "__pycache__",

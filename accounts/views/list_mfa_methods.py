@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 from typing import ClassVar
 
 from rest_framework import generics
-from rest_framework.permissions import BasePermission, IsAuthenticated
+from rest_framework.permissions import BasePermission
+from rest_framework.permissions import IsAuthenticated
 
 from accounts.models.mfa_method import MFAMethod
 from accounts.serializers.mfa_method import MFAMethod as MFAMethodSerializer

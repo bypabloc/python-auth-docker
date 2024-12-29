@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import jwt
 from django.conf import settings
 from django.utils import timezone
-from rest_framework import authentication, exceptions
+from rest_framework import authentication
+from rest_framework import exceptions
 from rest_framework.request import Request
 
 from accounts.models.custom_user import CustomUser

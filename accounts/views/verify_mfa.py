@@ -1,9 +1,13 @@
+from __future__ import annotations
+
+from enum import Enum
 from typing import ClassVar
 
 from django.utils import timezone
 from pyotp import TOTP
 from rest_framework import status
-from rest_framework.permissions import BasePermission, IsAuthenticated
+from rest_framework.permissions import BasePermission
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -16,6 +20,13 @@ from accounts.serializers.mfa_verification import (
     MFAVerification as MFAVerificationSerializer,
 )
 from accounts.utils.generate_token_for_user import generate_token_for_user
+
+
+class TypeCodes(Enum):
+    """Enum for OTP and backup code lengths."""
+
+    otp = 6
+    backup = 8
 
 
 class VerifyMFAView(APIView):
@@ -75,13 +86,13 @@ class VerifyMFAView(APIView):
             bool: True if verification succeeds, False otherwise
         """
         backup_codes = mfa_config.backup_codes or []
-        if len(code) == 8 and code in backup_codes:
+        if len(code) == TypeCodes.backup.value and code in backup_codes:
             backup_codes.remove(code)
             mfa_config.backup_codes = backup_codes
             mfa_config.save()
             return True
 
-        if len(code) == 6 and mfa_config.otp_secret:
+        if len(code) == TypeCodes.otp.value and mfa_config.otp_secret:
             totp = TOTP(mfa_config.otp_secret)
             return totp.verify(code)
 

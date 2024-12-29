@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from rest_framework.serializers import ModelSerializer
 
 from accounts.models.mfa_method import MFAMethod as MFAMethodModel

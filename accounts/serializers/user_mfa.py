@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 from typing import ClassVar
 
-from rest_framework.serializers import ModelSerializer, ValidationError
+from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import ValidationError
 
 from accounts.models.user_mfa import UserMFA
 

@@ -1,13 +1,13 @@
+from __future__ import annotations
+
 from typing import ClassVar
 
-from django.db.models import (
-    CASCADE,
-    BooleanField,
-    CharField,
-    DateTimeField,
-    ForeignKey,
-    Model,
-)
+from django.db.models import CASCADE
+from django.db.models import BooleanField
+from django.db.models import CharField
+from django.db.models import DateTimeField
+from django.db.models import ForeignKey
+from django.db.models import Model
 from django.utils.translation import gettext_lazy as _
 
 from accounts.models.custom_user import CustomUser

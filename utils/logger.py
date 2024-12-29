@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime
 from inspect import currentframe as inspect_currentframe
 from json import dumps as json_dumps

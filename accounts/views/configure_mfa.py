@@ -1,14 +1,19 @@
+from __future__ import annotations
+
 import base64
 import io
 from datetime import timedelta
 from typing import ClassVar
 
-import pyotp
-import qrcode
 from django.conf import settings
 from django.utils import timezone
+from pyotp import TOTP
+from pyotp import random_base32 as pyotp_random_base32
+from qrcode import QRCode as qrcode_QRCode
+from qrcode import constants as qrcode_constants
 from rest_framework import status
-from rest_framework.permissions import BasePermission, IsAuthenticated
+from rest_framework.permissions import BasePermission
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -47,19 +52,19 @@ class ConfigureMFAView(APIView):
         if method.name == "otp":
             if not mfa_config.otp_secret:
                 # Generar nuevo secreto OTP si no existe
-                mfa_config.otp_secret = pyotp.random_base32()
+                mfa_config.otp_secret = pyotp_random_base32()
                 # Generar códigos de respaldo
-                mfa_config.backup_codes = [pyotp.random_base32()[:8] for _ in range(5)]
+                mfa_config.backup_codes = [pyotp_random_base32()[:8] for _ in range(5)]
 
-            totp = pyotp.TOTP(mfa_config.otp_secret)
+            totp = TOTP(mfa_config.otp_secret)
             provisioning_uri = totp.provisioning_uri(
                 request.user.email, issuer_name="app"
             )
 
             # Crear QR
-            qr = qrcode.QRCode(
+            qr = qrcode_QRCode(
                 version=1,
-                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                error_correction=qrcode_constants.ERROR_CORRECT_L,
                 box_size=10,
                 border=4,
             )

@@ -1,4 +1,9 @@
-from django.db.models import BooleanField, CharField, DateTimeField, Model
+from __future__ import annotations
+
+from django.db.models import BooleanField
+from django.db.models import CharField
+from django.db.models import DateTimeField
+from django.db.models import Model
 from django.utils.translation import gettext_lazy as _
 
 

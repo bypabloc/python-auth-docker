@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from os import environ as os_environ
 from pathlib import Path
 
