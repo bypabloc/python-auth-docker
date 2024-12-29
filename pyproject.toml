@@ -1,4 +1,5 @@
 # pyproject.toml
+
 [tool.black]
 line-length = 88
 target-version = ['py312']
@@ -9,36 +10,14 @@ extend-exclude = '''
 ^/foo.py  # exclude a file named foo.py in the root of the project
 '''
 
+[tool.validate_imports]
+exclude = ["*/migrations/*"]  # Carpetas a excluir
+
 [tool.ruff]
-# Enable all rules by default
-select = [
-    "E",   # pycodestyle errors
-    "F",   # pyflakes
-    "I",   # isort
-    "N",   # pep8-naming
-    "D",   # pydocstring
-    "UP",  # pyupgrade
-    "ANN", # flake8-annotations (type hints)
-    "B",   # flake8-bugbear
-    "C",   # flake8-comprehensions
-    "T",   # flake8-print
-    "Q",   # flake8-quotes
-    "RUF", # Ruff-specific rules
-    "PLC", # pylint-convention
-    "PLE", # pylint-error
-    "PLR", # pylint-refactor
-    "PLW", # pylint-warning
-]
-
-# Ignorar reglas específicas
-ignore = [
-    "D100",  # Missing docstring in public module
-]
-
-# Never try to fix `F401` (unused imports)
-unfixable = ["F401"]
-
-# Excluir carpetas y archivos
+# Only keep the non-deprecated top-level settings
+line-length = 88
+indent-width = 4
+target-version = "py312"
 extend-exclude = [
     "*/migrations/*",    # Excluir todas las carpetas de migraciones
     "__pycache__",
@@ -46,83 +25,91 @@ extend-exclude = [
     ".ruff_cache",
     "__init__.py",
 ]
-
-# Igual que Black
-line-length = 88
-indent-width = 4
-
-# Python 3.12
-target-version = "py312"
-
-# Allow unused variables when underscore-prefixed.
-dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
-
-[tool.ruff.mccabe]
-# Unlike Flake8, default to a complexity level of 10.
-max-complexity = 10
-
-[tool.ruff.isort]
-known-first-party = ["app", "accounts"]
+select = [
+    "E",
+    "F",
+    "I",
+    "N",
+    "D",
+    "UP",
+    "ANN",
+    "B",
+    "C",
+    "T",
+    "Q",
+    "RUF",
+    "PLC",
+    "PLE",
+    "PLR",
+    "PLW",
+    "F403",
+    "I001",
+    "TID",
+    "NPY",
+    "TID252",
+]
+extend-select = ["I"]  # Enable isort rules
 
 [tool.ruff.lint]
-# Use Google-style docstrings.
-pydocstyle = {convention = "google"}
-
-# Reglas habilitadas
+# Moved from top-level to lint section
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 select = [
-    "E",   # pycodestyle errors
-    "F",   # pyflakes
-    "I",   # isort
-    "N",   # pep8-naming
-    "D",   # pydocstring
-    "UP",  # pyupgrade
-    "ANN", # flake8-annotations (type hints)
-    "B",   # flake8-bugbear
-    "C",   # flake8-comprehensions
-    "T",   # flake8-print
-    "Q",   # flake8-quotes
-    "RUF", # Ruff-specific rules
-    "PLC", # pylint-convention
-    "PLE", # pylint-error
-    "PLR", # pylint-refactor
-    "PLW", # pylint-warning
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "D",    # pydocstring
+    "UP",   # pyupgrade
+    "ANN",  # flake8-annotations (type hints)
+    "B",    # flake8-bugbear
+    "C",    # flake8-comprehensions
+    "T",    # flake8-print
+    "Q",    # flake8-quotes
+    "RUF",  # Ruff-specific rules
+    "PLC",  # pylint-convention
+    "PLE",  # pylint-error
+    "PLR",  # pylint-refactor
+    "PLW",  # pylint-warning
+    "F403", # Ban 'from module import *'
+    "I001", # Import block organization
+    "TID",  # flake8-tidy-imports
 ]
-
-# Reglas ignoradas
 ignore = [
     "D100",  # Missing docstring in public module
-    "PLC0414", # Useless import alias - permitimos alias aunque el nombre sea similar
+    "PLC0414", # Useless import alias
 ]
+unfixable = ["F401"]
 
-unfixable = ["F401"]  # Never try to fix unused imports
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
 
 [tool.ruff.lint.isort]
-# Configuración de organización de imports
-force-single-line = true  # Forzar una importación por línea
-required-imports = ["from __future__ import annotations"]  # Imports requeridos
-combine-as-imports = false  # No combinar imports con as
-force-wrap-aliases = true  # Forzar wrap de aliases
+known-first-party = ["app", "accounts"]
+force-single-line = true
+required-imports = ["from __future__ import annotations"]
+combine-as-imports = false
+force-wrap-aliases = true
 
-# Definir patrones permitidos y prohibidos para importaciones
-[tool.ruff.lint.extend-per-file-ignores]
-"__init__.py" = ["F401", "D100"]  # Permitir imports no usados en __init__.py
-
-[tool.ruff.lint.per-file-ignores]
-"utils/logger.py" = ["T201"]  # Permitir print() en el logger
-# Ignore specific rules for test files
-"tests/*" = ["D", "ANN"]
-# Ignore specific rules for migration files
-"*/migrations/*" = ["D", "ANN"]
-# Ignore specific rules for settings files
-"app/settings.py" = ["D", "ANN"]
-# Ignore specific rules for URL configuration files
-"*/urls.py" = ["D"]
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.ruff.lint.flake8-annotations]
 allow-star-arg-any = true
 mypy-init-return = false
 suppress-none-returning = true
 suppress-dummy-args = true
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "D100"]
+"utils/logger.py" = ["T201"]
+"pre-commit-scripts/validate_imports.py" = ["T201"]
+"tests/*" = ["D", "ANN"]
+"*/migrations/*" = ["D", "ANN"]
+"app/settings.py" = ["D", "ANN"]
+"*/urls.py" = ["D"]
 
 [tool.mypy]
 ignore_missing_imports = true

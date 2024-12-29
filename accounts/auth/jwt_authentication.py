@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-import jwt
 from django.conf import settings
 from django.utils import timezone
+from jwt import ExpiredSignatureError as jwt_ExpiredSignatureError
+from jwt import InvalidTokenError as jwt_InvalidTokenError
+from jwt import decode as jwt_decode
 from rest_framework import authentication
 from rest_framework import exceptions
 from rest_framework.request import Request
@@ -27,7 +29,7 @@ class JWTAuthentication(authentication.BaseAuthentication):
             token = auth_header.split(" ")[1]
 
             # Decode token
-            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+            payload = jwt_decode(token, settings.SECRET_KEY, algorithms=["HS256"])
 
             # Verify token in database
             token_obj = UserToken.objects.get(
@@ -43,9 +45,9 @@ class JWTAuthentication(authentication.BaseAuthentication):
 
             return token_obj.user, token
 
-        except jwt.ExpiredSignatureError as err:
+        except jwt_ExpiredSignatureError as err:
             raise exceptions.AuthenticationFailed("Token expired") from err
-        except jwt.InvalidTokenError as err:
+        except jwt_InvalidTokenError as err:
             raise exceptions.AuthenticationFailed("Invalid token") from err
         except UserToken.DoesNotExist as err:
             raise exceptions.AuthenticationFailed("Token not found") from err

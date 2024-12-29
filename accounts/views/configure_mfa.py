@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import base64
-import io
+from base64 import b64encode as base64_b64encode
 from datetime import timedelta
+from io import BytesIO as io_BytesIO
 from typing import ClassVar
 
 from django.conf import settings
@@ -75,9 +75,9 @@ class ConfigureMFAView(APIView):
             qr_image = qr.make_image(fill_color="black", back_color="white")
 
             # Convertir a base64
-            buffer = io.BytesIO()
+            buffer = io_BytesIO()
             qr_image.save(buffer, format="PNG")
-            qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+            qr_base64 = base64_b64encode(buffer.getvalue()).decode()
 
             response_data = {
                 "secret": mfa_config.otp_secret,

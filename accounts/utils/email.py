@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import random
-import string
 from datetime import timedelta
+from random import choices as random_choices
+from string import digits as string_digits
 
-import boto3
+from boto3 import client as boto3_client
 from botocore.exceptions import ClientError
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -16,7 +16,7 @@ from utils.logger import logger
 
 def generate_verification_code() -> str:
     """Generate a random 6-digit verification code."""
-    return "".join(random.choices(string.digits, k=6))
+    return "".join(random_choices(string_digits, k=6))
 
 
 def send_verification_email(user: User, code_type: str) -> dict:
@@ -54,7 +54,7 @@ def send_verification_email(user: User, code_type: str) -> dict:
             }
 
             # Create a new SES client
-            ses_client = boto3.client(
+            ses_client = boto3_client(
                 **client_params,
             )
 

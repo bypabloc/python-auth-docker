@@ -13,7 +13,6 @@ from rest_framework.views import APIView
 from accounts.serializers.user import User as UserSerializer
 from accounts.utils.email import send_verification_email
 from accounts.utils.generate_token_for_user import generate_token_for_user
-from utils.logger import logger
 
 
 class RegisterView(APIView):
@@ -40,15 +39,6 @@ class RegisterView(APIView):
             "user": UserSerializer(user).data,
             "token": token,
         }
-
-        logger.info(
-            "User created successfully: {user.email} ",
-            extra={
-                "SEND_VERIFICATION_CODE_IN_RESPONSE": (
-                    settings.SEND_VERIFICATION_CODE_IN_RESPONSE
-                ),
-            },
-        )
 
         if settings.SEND_VERIFICATION_CODE_IN_RESPONSE:
             response_data["verification"] = data_verify_email

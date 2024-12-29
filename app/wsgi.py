@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import os
+from os import environ as os_environ
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "app.settings")
+os_environ.setdefault("DJANGO_SETTINGS_MODULE", "app.settings")
 
 application = get_wsgi_application()

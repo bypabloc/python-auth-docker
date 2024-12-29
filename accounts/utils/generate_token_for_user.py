@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-import jwt
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.utils import timezone
+from jwt import encode as jwt_encode
 from rest_framework.request import Request
 from ua_parser import user_agent_parser
 
@@ -43,7 +43,7 @@ def generate_token_for_user(
         "is_temporary": is_temporary,
         "exp": expires_at.timestamp(),
     }
-    token = jwt.encode(token_payload, settings.SECRET_KEY, algorithm="HS256")
+    token = jwt_encode(token_payload, settings.SECRET_KEY, algorithm="HS256")
 
     # Create UserToken instance
     user_token = UserToken.objects.create(
