@@ -5,19 +5,20 @@ from datetime import timedelta
 import boto3
 from botocore.exceptions import ClientError
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.utils import timezone
 
-from accounts.models import VerificationCode
+from accounts.models.verification_code import VerificationCode
+from utils.logger import logger
 
 
-def generate_verification_code():
-    """Generate a random 6-digit verification code"""
+def generate_verification_code() -> str:
+    """Generate a random 6-digit verification code."""
     return "".join(random.choices(string.digits, k=6))
 
 
-def send_verification_email(user, code_type):
-    """
-    Send verification email to user
+def send_verification_email(user: User, code_type: str) -> dict:
+    """Send verification email to user.
 
     Args:
         user: CustomUser instance
@@ -49,7 +50,6 @@ def send_verification_email(user, code_type):
                 "aws_secret_access_key": settings.AWS_SECRET_ACCESS_KEY,
                 "region_name": settings.AWS_REGION_NAME,
             }
-            print(f"Creating SES client with params: {client_params}...")
 
             # Create a new SES client
             ses_client = boto3.client(
@@ -65,14 +65,11 @@ def send_verification_email(user, code_type):
                 },
             }
 
-            print(f"Sending email to {send_email_params}...")
-
             # Send email through SES
             response = ses_client.send_email(**send_email_params)
-
-            print(f"Email sent! Message ID: {response['MessageId']}")
+            logger.info(f"Email sent! Message ID: {response['MessageId']}")
         except ClientError as e:
-            print(f"An error occurred: {e.response['Error']['Message']}")
+            logger.info(f"An error occurred: {e.response['Error']['Message']}")
             # Here you might want to handle the error appropriately,
             # such as logging it or raising a custom exception
 

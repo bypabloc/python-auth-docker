@@ -1,6 +1,9 @@
+from typing import ClassVar
+
 from django.conf import settings
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import BasePermission, IsAuthenticated
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -9,9 +12,12 @@ from accounts.utils.email import send_verification_email
 
 
 class ResendCodeView(APIView):
-    permission_classes = [IsAuthenticated]
+    """Handle resending verification."""
 
-    def post(self, request):
+    permission_classes: ClassVar[list[type[BasePermission]]] = [IsAuthenticated]
+
+    def post(self, request: Request) -> Response:
+        """Resend the verification code."""
         # Solo permitir reenvío con token temporal
         if not request.token_payload.get("is_temporary", False):
             return Response(

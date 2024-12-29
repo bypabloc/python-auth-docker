@@ -1,11 +1,14 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from accounts.models import CustomUser, UserToken
+from accounts.models.custom_user import CustomUser
+from accounts.models.user_token import UserToken
 
 
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
+    """Custom user admin."""
+
     list_display = ("email", "username", "is_staff", "created_at")
     search_fields = ("email", "username")
     ordering = ("email",)
@@ -47,6 +50,8 @@ class CustomUserAdmin(UserAdmin):
 
 @admin.register(UserToken)
 class UserTokenAdmin(admin.ModelAdmin):
+    """User token admin."""
+
     list_display = ("user", "device_type", "is_valid", "created_at", "expires_at")
     list_filter = ("is_valid", "device_type")
     search_fields = ("user__email", "device_type")

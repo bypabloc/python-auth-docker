@@ -28,12 +28,14 @@
   "cSpell.words": [
     "BBVA",
     "healthcheck",
+    "Inicializador",
     "isready",
     "postgres",
     "postgresql",
     "PYTHONDONTWRITEBYTECODE",
     "PYTHONUNBUFFERED",
-    "runserver"
+    "runserver",
+    "totp"
   ],
   "faststruct.config": {
     "debug": true,

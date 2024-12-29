@@ -1,5 +1,8 @@
+from typing import ClassVar
+
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import BasePermission, IsAuthenticated
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -7,9 +10,12 @@ from accounts.models.user_token import UserToken
 
 
 class LogoutView(APIView):
-    permission_classes = [IsAuthenticated]
+    """Handle user logout."""
 
-    def post(self, request):
+    permission_classes: ClassVar[list[type[BasePermission]]] = [IsAuthenticated]
+
+    def post(self, request: Request) -> Response:
+        """Logout the user."""
         # Only allow logout with permanent tokens
         if request.token_payload.get("is_temporary", False):
             return Response(

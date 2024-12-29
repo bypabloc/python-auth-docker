@@ -1,6 +1,9 @@
+from typing import ClassVar
+
 from django.conf import settings
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, BasePermission
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -10,9 +13,12 @@ from accounts.utils.generate_token_for_user import generate_token_for_user
 
 
 class RegisterView(APIView):
-    permission_classes = [AllowAny]
+    """Handle user registration."""
 
-    def post(self, request):
+    permission_classes: ClassVar[list[type[BasePermission]]] = [AllowAny]
+
+    def post(self, request: Request) -> Response:
+        """Create a new user."""
         serializer = UserSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

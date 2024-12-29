@@ -2,12 +2,17 @@ import jwt
 from django.conf import settings
 from django.utils import timezone
 from rest_framework import authentication, exceptions
+from rest_framework.request import Request
 
-from accounts.models import UserToken
+from accounts.models.custom_user import CustomUser
+from accounts.models.user_token import UserToken
 
 
 class JWTAuthentication(authentication.BaseAuthentication):
-    def authenticate(self, request):
+    """JWT Authentication class."""
+
+    def authenticate(self, request: Request) -> tuple[CustomUser, str] | None:
+        """Authenticate the request and return a two-tuple of (user, token)."""
         auth_header = request.headers.get("Authorization")
         if not auth_header:
             return None
@@ -33,14 +38,15 @@ class JWTAuthentication(authentication.BaseAuthentication):
             token_obj.last_used_at = timezone.now()
             token_obj.save()
 
-            return (token_obj.user, token)
+            return token_obj.user, token
 
-        except jwt.ExpiredSignatureError:
-            raise exceptions.AuthenticationFailed("Token expired")
-        except jwt.InvalidTokenError:
-            raise exceptions.AuthenticationFailed("Invalid token")
-        except UserToken.DoesNotExist:
-            raise exceptions.AuthenticationFailed("Token not found")
+        except jwt.ExpiredSignatureError as err:
+            raise exceptions.AuthenticationFailed("Token expired") from err
+        except jwt.InvalidTokenError as err:
+            raise exceptions.AuthenticationFailed("Invalid token") from err
+        except UserToken.DoesNotExist as err:
+            raise exceptions.AuthenticationFailed("Token not found") from err
 
-    def authenticate_header(self, request):
+    def authenticate_header(self, request: Request) -> str:
+        """Return the authentication header."""
         return "Bearer"

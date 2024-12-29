@@ -2,15 +2,20 @@ from datetime import timedelta
 
 import jwt
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.utils import timezone
+from rest_framework.request import Request
 from ua_parser import user_agent_parser
 
-from accounts.models import UserToken
+from accounts.models.user_token import UserToken
 
 
-def generate_token_for_user(user, request, is_temporary=False):
-    """
-    Generate a JWT token and UserToken instance for a given user.
+def generate_token_for_user(
+    user: User,
+    request: Request,
+    is_temporary: bool = False,
+) -> tuple[str, UserToken]:
+    """Generate a JWT token and UserToken instance for a given user.
 
     Args:
         user: The user instance to generate token for

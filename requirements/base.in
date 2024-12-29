@@ -11,3 +11,4 @@ pyotp==2.9.0
 qrcode==8.0
 pillow==11.0.0
 boto3==1.34.14
+coloredlogs==15.0.1

@@ -13,6 +13,8 @@ from accounts.models.custom_user import CustomUser
 
 
 class UserToken(Model):
+    """Model for user token."""
+
     user = ForeignKey(CustomUser, on_delete=CASCADE, related_name="tokens")
     token = TextField()
     device_type = CharField(max_length=50)
@@ -24,5 +26,7 @@ class UserToken(Model):
     last_used_at = DateTimeField(auto_now=True)
 
     class Meta:
+        """Meta class for UserToken."""
+
         verbose_name = _("user token")
         verbose_name_plural = _("user tokens")

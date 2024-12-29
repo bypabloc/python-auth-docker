@@ -1,13 +1,15 @@
 import base64
 import io
 from datetime import timedelta
+from typing import ClassVar
 
 import pyotp
 import qrcode
 from django.conf import settings
 from django.utils import timezone
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import BasePermission, IsAuthenticated
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -18,18 +20,20 @@ from accounts.utils.email import generate_verification_code
 
 
 class ConfigureMFAView(APIView):
-    permission_classes = [IsAuthenticated]
+    """Handle MFA configuration."""
 
-    def get(self, request):
-        """Obtener configuración actual de MFA"""
+    permission_classes: ClassVar[list[type[BasePermission]]] = [IsAuthenticated]
+
+    def get(self, request: Request) -> Response:
+        """Obtener configuración actual de MFA."""
         try:
             mfa_config = request.user.mfa_config
             return Response(UserMFASerializer(mfa_config).data)
         except UserMFA.DoesNotExist:
             return Response({"is_enabled": False, "default_method": None})
 
-    def post(self, request):
-        """Configurar MFA"""
+    def post(self, request: Request) -> Response:
+        """Configurar MFA."""
         serializer = UserMFASerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

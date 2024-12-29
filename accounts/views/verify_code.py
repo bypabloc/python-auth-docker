@@ -1,6 +1,9 @@
+from typing import ClassVar
+
 from django.utils import timezone
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import BasePermission, IsAuthenticated
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -14,9 +17,12 @@ from accounts.utils.generate_token_for_user import generate_token_for_user
 
 
 class VerifyCodeView(APIView):
-    permission_classes = [IsAuthenticated]
+    """Handle verification code verification."""
 
-    def post(self, request):
+    permission_classes: ClassVar[list[type[BasePermission]]] = [IsAuthenticated]
+
+    def post(self, request: Request) -> Response:
+        """Verify the verification code."""
         # Check if token is temporary
         if not request.token_payload.get("is_temporary", False):
             return Response(

@@ -16,6 +16,8 @@ from accounts.models.mfa_method import MFAMethod
 
 
 class UserMFA(Model):
+    """Model for user MFA configuration."""
+
     user = OneToOneField(CustomUser, on_delete=CASCADE, related_name="mfa_config")
     is_enabled = BooleanField(default=False)
     default_method = ForeignKey(
@@ -38,8 +40,11 @@ class UserMFA(Model):
     updated_at = DateTimeField(auto_now=True)
 
     class Meta:
+        """Meta class for UserMFA."""
+
         verbose_name = _("user MFA configuration")
         verbose_name_plural = _("user MFA configurations")
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Return string representation."""
         return f"MFA config for {self.user.email}"

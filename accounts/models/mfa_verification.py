@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from django.db.models import (
     CASCADE,
     BooleanField,
@@ -13,6 +15,8 @@ from accounts.models.mfa_method import MFAMethod
 
 
 class MFAVerification(Model):
+    """Model for MFA verification."""
+
     user = ForeignKey(CustomUser, on_delete=CASCADE, related_name="mfa_verifications")
     method = ForeignKey(MFAMethod, on_delete=CASCADE, related_name="verifications")
     code = CharField(max_length=6)
@@ -26,9 +30,11 @@ class MFAVerification(Model):
     )
 
     class Meta:
-        verbose_name = _("MFA verification")
-        verbose_name_plural = _("MFA verifications")
-        ordering = ["-created_at"]
+        """Meta class for MFAVerification."""
 
-    def __str__(self):
+        verbose_name = _("MFA verification")
+        ordering: ClassVar[list[str]] = ["-created_at"]
+
+    def __str__(self) -> str:
+        """Return string representation."""
         return f"MFA verification for {self.user.email} using {self.method.name}"
