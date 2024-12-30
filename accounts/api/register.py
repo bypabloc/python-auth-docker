@@ -32,8 +32,27 @@ def post(
 
     user = serializer.save()
 
-    token, _ = generate_token_for_user(user, request, is_temporary=True)
-    data_verify_email = send_verification_email(user, "registration")
+    result_generate_token_for_user = generate_token_for_user(
+        user=user,
+        request=request,
+        is_temporary=True,
+    )
+    if result_generate_token_for_user.is_error:
+        return CustomResponse(
+            ResponseConfig(
+                errors=result_generate_token_for_user.value,
+                status=500,
+            ),
+        )
+
+    result_send_verification_email = send_verification_email(
+        user=user,
+        code_type="registration",
+    )
+
+    data_verify_email = result_send_verification_email.value
+
+    token = result_generate_token_for_user.value["token"]
 
     response_data = {
         "message": (

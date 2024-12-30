@@ -120,7 +120,8 @@ def post_mfa_config(request: Request) -> CustomResponse:
         }
     else:  # email
         # Generar y enviar código de verificación
-        code = generate_verification_code()
+        result_generate_verification_code = generate_verification_code()
+        code = result_generate_verification_code.value
 
         # Invalidar verificaciones anteriores
         MFAVerification.objects.filter(

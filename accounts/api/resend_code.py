@@ -45,7 +45,12 @@ def post(
         )
 
     # Generar y enviar nuevo código
-    data_verify_email = send_verification_email(request.user, code_type.type)
+    result_send_verification_email = send_verification_email(
+        request.user,
+        code_type.type,
+    )
+
+    data_verify_email = result_send_verification_email.value
 
     response_data = {
         "verification": None,

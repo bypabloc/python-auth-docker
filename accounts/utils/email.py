@@ -3,23 +3,29 @@ from __future__ import annotations
 from datetime import timedelta
 from random import choices as random_choices
 from string import digits as string_digits
+from typing import Any
 
 from boto3 import client as boto3_client
 from botocore.exceptions import ClientError
 from django.conf import settings
+from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import User
 from django.utils import timezone
 
 from accounts.models.verification_code import VerificationCode
 from utils.logger import logger
+from utils.result_as_values import Result
 
 
-def generate_verification_code() -> str:
+def generate_verification_code() -> Result[str]:
     """Generate a random 6-digit verification code."""
-    return "".join(random_choices(string_digits, k=6))
+    return Result.ok("".join(random_choices(string_digits, k=6)))
 
 
-def send_verification_email(user: User, code_type: str) -> dict:
+def send_verification_email(
+    user: User | AbstractUser,
+    code_type: str,
+) -> Result[dict[str, Any]]:
     """Send verification email to user.
 
     Args:
@@ -33,12 +39,17 @@ def send_verification_email(user: User, code_type: str) -> dict:
         is_used=False,
     ).delete()
 
-    code = generate_verification_code()
+    result_generate_verification_code = generate_verification_code()
     expires_at = timezone.now() + timedelta(minutes=10)
+
+    code = result_generate_verification_code.value
 
     # Create verification code record
     VerificationCode.objects.create(
-        user=user, code=code, expires_at=expires_at, type=code_type
+        user=user,
+        code=code,
+        expires_at=expires_at,
+        type=code_type,
     )
 
     subject = "Your Verification Code"
@@ -75,7 +86,9 @@ def send_verification_email(user: User, code_type: str) -> dict:
             # Here you might want to handle the error appropriately,
             # such as logging it or raising a custom exception
 
-    return {
-        "code": code,
-        "expires_at": expires_at,
-    }
+    return Result.ok(
+        {
+            "code": code,
+            "expires_at": expires_at,
+        }
+    )

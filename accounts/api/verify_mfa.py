@@ -72,7 +72,21 @@ def post(
         mfa_config.is_enabled = True
         mfa_config.save()
 
-        token, _ = generate_token_for_user(user, request, is_temporary=False)
+        result_generate_token_for_user = generate_token_for_user(
+            user,
+            request,
+            is_temporary=False,
+        )
+        if result_generate_token_for_user.is_error:
+            return CustomResponse(
+                ResponseConfig(
+                    errors={"error": "Failed to generate token"},
+                    status=500,
+                ),
+            )
+
+        token = result_generate_token_for_user.value["token"]
+
         return CustomResponse(
             ResponseConfig(
                 data={"token": token},

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from typing import Any
 
 from django.conf import settings
+from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import User
 from django.utils import timezone
 from jwt import encode as jwt_encode
@@ -10,13 +12,14 @@ from rest_framework.request import Request
 from ua_parser import user_agent_parser
 
 from accounts.models.user_token import UserToken
+from utils.result_as_values import Result
 
 
 def generate_token_for_user(
-    user: User,
+    user: User | AbstractUser,
     request: Request,
     is_temporary: bool = False,
-) -> tuple[str, UserToken]:
+) -> Result[dict[str, Any]]:
     """Generate a JWT token and UserToken instance for a given user.
 
     Args:
@@ -43,7 +46,11 @@ def generate_token_for_user(
         "is_temporary": is_temporary,
         "exp": expires_at.timestamp(),
     }
-    token = jwt_encode(token_payload, settings.SECRET_KEY, algorithm="HS256")
+    token = jwt_encode(
+        token_payload,
+        settings.SECRET_KEY,
+        algorithm="HS256",
+    )
 
     # Create UserToken instance
     user_token = UserToken.objects.create(
@@ -57,4 +64,9 @@ def generate_token_for_user(
         expires_at=expires_at,
     )
 
-    return token, user_token
+    return Result.ok(
+        {
+            "token": token,
+            "user_token": user_token,
+        }
+    )

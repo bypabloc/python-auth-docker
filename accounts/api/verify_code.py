@@ -83,7 +83,20 @@ def post(
         user.save()
 
     # Generate permanent token
-    token, user_token = generate_token_for_user(user, request, is_temporary=False)
+    result_generate_token_for_user = generate_token_for_user(
+        user,
+        request,
+        is_temporary=False,
+    )
+    if result_generate_token_for_user.is_error:
+        return CustomResponse(
+            ResponseConfig(
+                errors={
+                    "error": "Failed to generate token",
+                },
+                status=500,
+            ),
+        )
 
     # Invalidate temporary token
     UserToken.objects.filter(user=user, token=request.auth, is_valid=True).update(
@@ -96,6 +109,8 @@ def post(
 
     # delete all verification codes for the user
     VerificationCode.objects.filter(user=user).delete()
+
+    token = result_generate_token_for_user.value["token"]
 
     return CustomResponse(
         ResponseConfig(
