@@ -1,125 +1,135 @@
 # pyproject.toml
 
+# Configuración del formateador Black
 [tool.black]
-line-length = 88
-target-version = ['py312']
-include = '\.pyi?$'
-extend-exclude = '''
+line-length = 88                # Longitud máxima de línea
+target-version = ['py312']      # Versión de Python objetivo
+include = '\.pyi?$'             # Incluir archivos .py y .pyi
+extend-exclude = '''            # Excluir archivos específicos
 # A regex preceded with ^/ will apply only to files and directories
 # in the root of the project.
 ^/foo.py  # exclude a file named foo.py in the root of the project
 '''
 
+# Configuración de validación de imports
 [tool.validate_imports]
-exclude = ["*/migrations/*"]  # Carpetas a excluir
+exclude = ["*/migrations/*"]     # No validar imports en archivos de migración
 
+# Configuración principal de Ruff
 [tool.ruff]
-# Only keep the non-deprecated top-level settings
-line-length = 88
-indent-width = 4
-target-version = "py312"
-extend-exclude = [
-    "*/migrations/*",    # Excluir todas las carpetas de migraciones
-    "__pycache__",
-    ".git",
-    ".ruff_cache",
-    "__init__.py",
+line-length = 88                # Longitud máxima de línea
+indent-width = 4                # Tamaño de indentación
+target-version = "py312"        # Versión de Python objetivo
+extend-exclude = [              # Archivos y directorios a excluir
+    "*/migrations/*",           # Excluir migraciones de Django
+    "__pycache__",             # Excluir archivos cache de Python
+    ".git",                    # Excluir directorio git
+    ".ruff_cache",             # Excluir cache de Ruff
+    "__init__.py",             # Excluir archivos de inicialización
 ]
-select = [
-    "E",
-    "F",
-    "I",
-    "N",
-    "D",
-    "UP",
-    "ANN",
-    "B",
-    "C",
-    "T",
-    "Q",
-    "RUF",
-    "PLC",
-    "PLE",
-    "PLR",
-    "PLW",
-    "F403",
-    "I001",
-    "TID",
-    "NPY",
-    "TID252",
+select = [                      # Reglas de linting a activar
+    "E",    # Errores de estilo de código (pycodestyle)
+    "F",    # Errores de flujo de código (pyflakes)
+    "I",    # Ordenamiento de imports
+    "N",    # Convenciones de nombres (PEP 8)
+    "D",    # Docstrings
+    "UP",   # Actualización a sintaxis moderna
+    "ANN",  # Anotaciones de tipos
+    "B",    # Errores comunes y bugs
+    "C",    # Comprensiones
+    "T",    # Print statements
+    "Q",    # Quotes
+    "RUF",  # Reglas específicas de Ruff
+    "PLC",  # Convenciones de PyLint
+    "PLE",  # Errores de PyLint
+    "PLR",  # Refactorizaciones de PyLint
+    "PLW",  # Advertencias de PyLint
+    "F403", # Import *
+    "I001", # Organización de bloques de import
+    "TID",  # Imports ordenados
+    "NPY",  # NumPy
+    "TID252", # Imports relativos
 ]
-extend-select = ["I"]  # Enable isort rules
+extend-select = ["I"]           # Habilitar reglas adicionales de isort
 
+# Configuración detallada del linter
 [tool.ruff.lint]
-# Moved from top-level to lint section
-dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
-select = [
-    "E",    # pycodestyle errors
-    "F",    # pyflakes
-    "I",    # isort
-    "N",    # pep8-naming
-    "D",    # pydocstring
-    "UP",   # pyupgrade
-    "ANN",  # flake8-annotations (type hints)
-    "B",    # flake8-bugbear
-    "C",    # flake8-comprehensions
-    "T",    # flake8-print
-    "Q",    # flake8-quotes
-    "RUF",  # Ruff-specific rules
-    "PLC",  # pylint-convention
-    "PLE",  # pylint-error
-    "PLR",  # pylint-refactor
-    "PLW",  # pylint-warning
-    "F403", # Ban 'from module import *'
-    "I001", # Import block organization
-    "TID",  # flake8-tidy-imports
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"  # Patrón para variables dummy
+select = [                      # Reglas específicas de linting
+    "E",    # Errores de estilo (pycodestyle)
+    "F",    # Errores de flujo (pyflakes)
+    "I",    # Ordenamiento de imports
+    "N",    # Convenciones de nombres
+    "D",    # Docstrings
+    "UP",   # Actualizaciones de sintaxis
+    "ANN",  # Anotaciones de tipos
+    "B",    # Bugs comunes
+    "C",    # Comprensiones
+    "T",    # Print statements
+    "Q",    # Quotes
+    "RUF",  # Reglas de Ruff
+    "PLC",  # Convenciones PyLint
+    "PLE",  # Errores PyLint
+    "PLR",  # Refactorizaciones PyLint
+    "PLW",  # Advertencias PyLint
+    "F403", # Import *
+    "I001", # Organización de imports
+    "TID",  # Imports ordenados
 ]
-ignore = [
-    "D100",  # Missing docstring in public module
-    "PLC0414", # Useless import alias
+ignore = [                      # Reglas a ignorar
+    "D100",    # Docstring en módulo público
+    "PLC0414", # Alias innecesario en import
+    "PLR0911"  # Demasiados return statements
 ]
-unfixable = ["F401"]
+unfixable = ["F401"]           # Errores que no se deben auto-corregir
 
+# Configuración de imports ordenados
 [tool.ruff.lint.flake8-tidy-imports]
-ban-relative-imports = "all"
+ban-relative-imports = "all"    # Prohibir imports relativos
 
+# Configuración de complejidad del código
 [tool.ruff.lint.mccabe]
-max-complexity = 10
+max-complexity = 10            # Complejidad ciclomática máxima
 
+# Configuración de ordenamiento de imports
 [tool.ruff.lint.isort]
-known-first-party = ["app", "accounts"]
-force-single-line = true
-required-imports = ["from __future__ import annotations"]
-combine-as-imports = false
-force-wrap-aliases = true
+known-first-party = ["app", "accounts"]  # Módulos propios del proyecto
+force-single-line = true                 # Un import por línea
+required-imports = ["from __future__ import annotations"]  # Import obligatorio
+combine-as-imports = false               # No combinar imports con alias
+force-wrap-aliases = true                # Forzar wrap de alias
 
+# Configuración de estilo de docstrings
 [tool.ruff.lint.pydocstyle]
-convention = "google"
+convention = "google"                    # Usar convención de Google
 
+# Configuración de anotaciones de tipos
 [tool.ruff.lint.flake8-annotations]
-allow-star-arg-any = true
-mypy-init-return = false
-suppress-none-returning = true
-suppress-dummy-args = true
+allow-star-arg-any = true               # Permitir *args sin tipo
+mypy-init-return = false                # No requerir return type en __init__
+suppress-none-returning = true          # No requerir -> None
+suppress-dummy-args = true              # No requerir tipos en args dummy
 
+# Excepciones por archivo
 [tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F401", "D100"]
-"utils/logger.py" = ["T201"]
-"pre-commit-scripts/validate_imports.py" = ["T201"]
-"tests/*" = ["D", "ANN"]
-"*/migrations/*" = ["D", "ANN"]
-"app/settings.py" = ["D", "ANN"]
-"*/urls.py" = ["D"]
+"__init__.py" = ["F401", "D100"]          # Permitir imports no usados en __init__
+"utils/logger.py" = ["T201"]               # Permitir prints en logger
+"pre-commit-scripts/validate_imports.py" = ["T201"]  # Permitir prints en scripts
+"tests/*" = ["D", "ANN"]                   # No requerir docstrings ni tipos en tests
+"*/migrations/*" = ["D", "ANN"]            # No requerir docstrings ni tipos en migraciones
+"app/settings.py" = ["D", "ANN"]           # No requerir docstrings ni tipos en settings
+"*/urls.py" = ["D"]                        # No requerir docstrings en urls
 
+# Configuración de MyPy (verificador de tipos)
 [tool.mypy]
-ignore_missing_imports = true
-disallow_untyped_defs = false
-disallow_incomplete_defs = false
-check_untyped_defs = false
-disallow_untyped_decorators = false
-no_implicit_optional = false
-strict_optional = false
-warn_return_any = false
-warn_unused_ignores = false
-warn_redundant_casts = false
-warn_unused_configs = false
+ignore_missing_imports = true              # Ignorar imports sin tipos
+disallow_untyped_defs = false             # Permitir funciones sin tipos
+disallow_incomplete_defs = false           # Permitir tipos incompletos
+check_untyped_defs = false                # No verificar funciones sin tipos
+disallow_untyped_decorators = false       # Permitir decoradores sin tipos
+no_implicit_optional = false              # Permitir opcionales implícitos
+strict_optional = false                   # No ser estricto con opcionales
+warn_return_any = false                   # No advertir sobre return Any
+warn_unused_ignores = false               # No advertir sobre ignores no usados
+warn_redundant_casts = false              # No advertir sobre casteos redundantes
+warn_unused_configs = false               # No advertir sobre configs no usadas

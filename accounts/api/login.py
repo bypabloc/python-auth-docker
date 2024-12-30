@@ -12,6 +12,7 @@ from rest_framework.decorators import permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 
+from accounts.models.custom_user import CustomUser
 from accounts.models.mfa_verification import MFAVerification
 from accounts.models.user_mfa import UserMFA
 from accounts.serializers.login import Login as LoginSerializer
@@ -22,18 +23,20 @@ from accounts.utils.generate_token_for_user import generate_token_for_user
 from utils.custom_response import CustomResponse
 from utils.custom_response import ResponseConfig
 from utils.decorators.log_api import log_api
-from utils.result_as_values import ErrorKind
+from utils.logger import logger
 from utils.result_as_values import Result
 from utils.result_as_values import handle_result
 
 
 @handle_result
-def validate_login_data(request_data: dict) -> Result[dict]:
+def validate_login_data(
+    request_data: dict,
+) -> Result[dict]:
     """Validate login request data using serializer."""
     serializer = LoginSerializer(data=request_data)
     if not serializer.is_valid():
         return Result.fail(
-            ErrorKind.VALIDATION_ERROR,
+            "invalid_login_data",
             "Invalid login data",
             details=serializer.errors.__dict__,
         )
@@ -42,17 +45,25 @@ def validate_login_data(request_data: dict) -> Result[dict]:
 
 @handle_result
 def authenticate_user(
-    email: str | None, username: str | None, password: str
-) -> Result[User]:
+    email: str | None,
+    username: str | None,
+    password: str,
+) -> Result[CustomUser]:
     """Authenticate user with provided credentials."""
     user = authenticate(username=email or username, password=password)
     if not user:
-        return Result.fail(ErrorKind.UNAUTHORIZED, "Invalid credentials")
+        return Result.fail(
+            "invalid_credentials",
+            "Invalid credentials",
+        )
     return Result.ok(user)
 
 
 @handle_result
-def handle_unverified_user(user: User, request: Request) -> Result[dict[str, Any]]:
+def handle_unverified_user(
+    user: User,
+    request: Request,
+) -> Result[dict[str, Any]]:
     """Handle login attempt for unverified user."""
     result_token = generate_token_for_user(
         user=user,
@@ -60,14 +71,20 @@ def handle_unverified_user(user: User, request: Request) -> Result[dict[str, Any
         is_temporary=True,
     )
     if result_token.is_error:
-        return Result.fail(ErrorKind.INTERNAL_ERROR, "Error generating token")
+        return Result.fail(
+            "error_generating_token",
+            "Error generating token",
+        )
 
     result_verification = send_verification_email(
         user=user,
         code_type="login",
     )
     if result_verification.is_error:
-        return Result.fail(ErrorKind.INTERNAL_ERROR, "Error sending verification email")
+        return Result.fail(
+            "error_sending_verification_email",
+            "Error sending verification email",
+        )
 
     response_data = {
         "user": UserSerializer(user).data,
@@ -83,7 +100,10 @@ def handle_unverified_user(user: User, request: Request) -> Result[dict[str, Any
 
 
 @handle_result
-def create_mfa_verification(user: User, token: str) -> Result[dict[str, Any]]:
+def create_mfa_verification(
+    user: User,
+    token: str,
+) -> Result[dict[str, Any]]:
     """Create MFA verification record and send email."""
     try:
         code = generate_verification_code()
@@ -96,14 +116,20 @@ def create_mfa_verification(user: User, token: str) -> Result[dict[str, Any]]:
         )
     except Exception as e:
         return Result.fail(
-            ErrorKind.INTERNAL_ERROR,
+            "error_creating_mfa_verification",
             "Error creating MFA verification",
             details={"error": str(e)},
         )
 
-    result_verification = send_verification_email(user=user, code_type="mfa")
+    result_verification = send_verification_email(
+        user=user,
+        code_type="mfa",
+    )
     if result_verification.is_error:
-        return Result.fail(ErrorKind.INTERNAL_ERROR, "Error sending MFA email")
+        return Result.fail(
+            "error_sending_mfa_email",
+            "Error sending MFA email",
+        )
 
     verification_data = {}
     if settings.SEND_VERIFICATION_CODE_IN_RESPONSE:
@@ -112,18 +138,25 @@ def create_mfa_verification(user: User, token: str) -> Result[dict[str, Any]]:
             "expires_at": verification.expires_at,
         }
 
-    return Result.ok(verification_data)
+    return Result.ok(
+        verification_data,
+    )
 
 
 @handle_result
 def handle_mfa_verification(
-    user: User, request: Request
-) -> Result[dict[str, Any] | None]:
+    user: User,
+    request: Request,
+) -> Result[dict[str, Any]]:
     """Handle MFA verification if enabled."""
     try:
         mfa_config = user.mfa_config
         if not mfa_config.is_enabled:
-            return Result.ok(None)
+            return Result.ok(
+                {
+                    "requires_verification": True,
+                }
+            )
 
         result_token = generate_token_for_user(
             user=user,
@@ -131,7 +164,10 @@ def handle_mfa_verification(
             is_temporary=True,
         )
         if result_token.is_error:
-            return Result.fail(ErrorKind.INTERNAL_ERROR, "Error generating token")
+            return Result.fail(
+                kind="error_generating_token",
+                message="Error generating token",
+            )
 
         token = result_token.value["token"]
         response_data = {
@@ -143,22 +179,34 @@ def handle_mfa_verification(
         }
 
         if mfa_config.default_method.name == "email":
-            result_mfa = create_mfa_verification(user, token)
+            result_mfa = create_mfa_verification(
+                user,
+                token,
+            )
             if result_mfa.is_error:
                 return Result.fail(
-                    ErrorKind.INTERNAL_ERROR,
-                    "Error creating MFA verification",
+                    kind="error_creating_mfa_verification",
+                    message="Error creating MFA verification",
                 )
             response_data.update(result_mfa.value or {})
 
-        return Result.ok(response_data)
-
+        return Result.ok(
+            response_data,
+        )
     except UserMFA.DoesNotExist:
-        return Result.ok(None)
+        return Result.ok(
+            {
+                "requires_verification": True,
+                "UserMFA.DoesNotExist": True,
+            }
+        )
 
 
 @handle_result
-def generate_final_token(user: User, request: Request) -> Result[dict[str, Any]]:
+def generate_final_token(
+    user: User,
+    request: Request,
+) -> Result[dict[str, Any]]:
     """Generate final authentication token."""
     result_token = generate_token_for_user(
         user=user,
@@ -166,7 +214,10 @@ def generate_final_token(user: User, request: Request) -> Result[dict[str, Any]]
         is_temporary=False,
     )
     if result_token.is_error:
-        return Result.fail(ErrorKind.INTERNAL_ERROR, "Error generating final token")
+        return Result.fail(
+            "error_generating_final_token",
+            "Error generating final token",
+        )
 
     return Result.ok(
         {
@@ -206,56 +257,104 @@ def post(
 ) -> CustomResponse:
     """Login the user."""
     # Validate request data
-    result_validation = validate_login_data(request.data)
+    result_validation = validate_login_data(
+        request.data,
+    )
     if result_validation.is_error:
-        return create_response_from_result(result_validation, error_status=400)
+        result_validation_error = result_validation.error
+        return CustomResponse(
+            ResponseConfig(
+                message=result_validation_error.message,
+                errors=result_validation_error.details,
+                code=result_validation_error.kind,
+                status=422,
+            )
+        )
 
     # Authenticate user
     data = result_validation.value
     result_auth = authenticate_user(
-        data.get("email"), data.get("username"), data.get("password")
+        data.get("email"),
+        data.get("username"),
+        data.get("password"),
     )
     if result_auth.is_error:
-        return create_response_from_result(result_auth, error_status=401)
+        result_auth_error = result_auth.error
+        return CustomResponse(
+            ResponseConfig(
+                message=result_auth_error.message,
+                errors=result_auth_error.details,
+                code=result_auth_error.kind,
+                status=401,
+            )
+        )
 
     # Handle unverified user
     user = result_auth.value
     if not user.is_verified:
-        result_unverified = handle_unverified_user(user, request)
+        result_unverified = handle_unverified_user(
+            user,
+            request,
+        )
         if result_unverified.is_error:
-            return create_response_from_result(result_unverified)
+            result_unverified_error = result_unverified.error
+            return CustomResponse(
+                ResponseConfig(
+                    message=result_unverified_error.message,
+                    errors=result_unverified_error.details,
+                    code=result_unverified_error.kind,
+                    status=401,
+                )
+            )
 
-        return create_response_from_result(
-            result_unverified,
+        return CustomResponse(
             ResponseConfig(
-                data=result_unverified.value,
+                message="Please verify your email first.",
                 code="email_not_verified",
                 status=400,
-                message="Please verify your email first.",
-            ),
+            )
         )
 
     # Handle MFA verification
-    result_mfa = handle_mfa_verification(user, request)
-    if result_mfa.is_error or result_mfa.value is not None:
-        return create_response_from_result(
-            result_mfa,
-            (
-                ResponseConfig(
-                    data=result_mfa.value,
-                    code="mfa_verification_required",
-                )
-                if not result_mfa.is_error
-                else None
-            ),
+    result_mfa = handle_mfa_verification(
+        user=user,
+        request=request,
+    )
+    if result_mfa.is_error:
+        result_mfa_error = result_mfa.error
+        return CustomResponse(
+            ResponseConfig(
+                message=result_mfa_error.message,
+                code=result_mfa_error.kind,
+                status=400,
+            )
+        )
+
+    logger.info(
+        "MFA verification required",
+        extra=result_mfa.__dict__,
+    )
+
+    # Si hay respuesta de MFA pero no es None, significa que se requiere MFA
+    if result_mfa.value["requires_verification"] and user.is_verified:
+        return CustomResponse(
+            ResponseConfig(
+                message="MFA verification required",
+                code="mfa_verification_required",
+            )
         )
 
     # Generate final token
-    result_token = generate_final_token(user, request)
-    return create_response_from_result(
-        result_token,
+    result_token = generate_final_token(
+        user=user,
+        request=request,
+    )
+
+    result_token_value = result_token.value
+    return CustomResponse(
         ResponseConfig(
-            data=result_token.value,
             message="Login successful",
-        ),
+            code="success",
+            data=result_token_value,
+        )
     )

@@ -1,0 +1,28 @@
+FROM python:3.12
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    # pip
+    PIP_NO_CACHE_DIR=off \
+    PIP_DISABLE_PIP_VERSION_CHECK=on \
+    PIP_DEFAULT_TIMEOUT=100
+
+WORKDIR /app
+
+# Instalar dependencias
+COPY requirements/base.in /app/requirements/base.in
+COPY requirements/local.in /app/requirements/local.in
+
+RUN pip install -r requirements/local.in
+
+# Instalar dependencias adicionales para testing
+RUN pip install pytest-cov pytest-django pytest-mock && \
+    apt-get update && \
+    apt-get install -y netcat-openbsd
+
+# Agregar y dar permisos al script de entrada
+COPY docker/entrypoint.test.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Change default command to keep container running
+CMD ["tail", "-f", "/dev/null"]

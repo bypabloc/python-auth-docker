@@ -1,5 +1,7 @@
 version: '3.8'
 
+name: python_auth_test
+
 services:
   web:
     build:

@@ -79,6 +79,61 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
+## Running Tests with test.sh
+
+The project includes a convenient test.sh script that helps manage test execution in Docker containers. Here's how to use it:
+
+### Basic Usage
+
+```bash
+# Run all tests
+./test.sh run
+
+# Run a specific test file
+./test.sh run tests/test_login.py
+
+# Run a specific test case
+./test.sh run tests/test_login.py::TestLogin::test_successful_login
+```
+
+### Available Commands
+
+- `run [test_path] [extra_args]`: Run tests (default command)
+- `up`: Start test containers
+- `down`: Stop test containers
+- `restart`: Restart test containers
+- `help`: Show help message
+
+### Examples
+
+```bash
+# Start test containers
+./test.sh up
+
+# Run all tests with verbose output
+./test.sh run -v
+
+# Run specific test with additional pytest arguments
+./test.sh run tests/test_login.py -v -s
+
+# Stop all test containers
+./test.sh down
+
+# Restart containers and run tests
+./test.sh restart
+```
+
+### Notes
+
+- The script automatically handles:
+  - Starting required Docker containers
+  - Ensuring database is ready
+  - Running migrations
+  - Test execution in the correct environment
+- All pytest arguments are supported after the test path
+- The script provides verbose output by default
+- Tests are run in an isolated Docker environment
+
 ## Development Setup
 
 1. Install and configure pre-commit hooks:

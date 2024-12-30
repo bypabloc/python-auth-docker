@@ -26,6 +26,7 @@
   // Python general
   "python.analysis.typeCheckingMode": "basic",
   "cSpell.words": [
+    "autouse",
     "BBVA",
     "healthcheck",
     "Inicializador",

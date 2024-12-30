@@ -1,0 +1,58 @@
+version: '3.8'
+
+name: python_auth_test
+
+services:
+  test:
+    container_name: python_auth_test
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.test
+    tty: true
+    stdin_open: true
+    command: tail -f /dev/null
+    volumes:
+      - ..:/app:delegated
+    environment:
+      - DEBUG=1
+      - DJANGO_SETTINGS_MODULE=app.settings
+      - PYTHONPATH=/app
+      - DB_NAME=test_db
+      - DB_USER=test_user
+      - DB_PASSWORD=test_password
+      - DB_HOST=test_db
+      - DB_PORT=5432
+      - SEND_VERIFICATION_CODE_IN_RESPONSE=1
+      - SEND_EMAIL=0
+    networks:
+      - test-network
+    depends_on:
+      test_db:
+        condition: service_healthy
+
+  test_db:
+    container_name: python_auth_test_db
+    image: postgres:16
+    environment:
+      - POSTGRES_DB=test_db
+      - POSTGRES_USER=test_user
+      - POSTGRES_PASSWORD=test_password
+    ports:
+      - "5433:5432"
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - test_db_data:/var/lib/postgresql/data
+
+networks:
+  test-network:
+    driver: bridge
+
+volumes:
+  test_db_data:
