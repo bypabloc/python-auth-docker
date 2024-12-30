@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from django.urls import path
 
-from accounts.views.configure_mfa import configure_mfa
-from accounts.views.list_mfa_methods import get as list_mfa_methods_get
-from accounts.views.login import post as login_post
-from accounts.views.logout import post as logout_post
-from accounts.views.register import post as register_post
-from accounts.views.resend_code import post as resend_code_post
-from accounts.views.verify_code import post as verify_code_post
-from accounts.views.verify_mfa import post as verify_mfa_post
+from accounts.api.configure_mfa import configure_mfa
+from accounts.api.list_mfa_methods import get as list_mfa_methods_get
+from accounts.api.login import post as login_post
+from accounts.api.logout import post as logout_post
+from accounts.api.register import post as register_post
+from accounts.api.resend_code import post as resend_code_post
+from accounts.api.verify_code import post as verify_code_post
+from accounts.api.verify_mfa import post as verify_mfa_post
 
 app_name = "accounts"
 
