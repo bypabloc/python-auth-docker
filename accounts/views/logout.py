@@ -1,32 +1,56 @@
 from __future__ import annotations
 
-from typing import ClassVar
-
-from rest_framework import status
-from rest_framework.permissions import BasePermission
+from rest_framework.decorators import api_view
+from rest_framework.decorators import permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
-from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from accounts.models.user_token import UserToken
+from utils.custom_response import CustomResponse
+from utils.custom_response import ResponseConfig
+from utils.decorators.log_api import log_api
+from utils.logger import logger
 
 
-class LogoutView(APIView):
-    """Handle user logout."""
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@log_api
+def post(
+    request: Request,
+) -> CustomResponse:
+    """Logout the user."""
+    if request.token_payload.get(
+        "is_temporary",
+        False,
+    ):
+        logger.error(
+            "Invalid token type",
+            extra={
+                "request": request,
+                "request.token_payload": request.token_payload,
+            },
+        )
+        return CustomResponse(
+            ResponseConfig(
+                errors={
+                    "error": "Invalid token type",
+                },
+                status=400,
+                code="invalid_token",
+            ),
+        )
 
-    permission_classes: ClassVar[list[type[BasePermission]]] = [IsAuthenticated]
+    UserToken.objects.filter(
+        user=request.user,
+        token=request.auth,
+        is_valid=True,
+    ).update(
+        is_valid=False,
+    )
 
-    def post(self, request: Request) -> Response:
-        """Logout the user."""
-        # Only allow logout with permanent tokens
-        if request.token_payload.get("is_temporary", False):
-            return Response(
-                {"error": "Invalid token type"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        UserToken.objects.filter(
-            user=request.user, token=request.auth, is_valid=True
-        ).update(is_valid=False)
-
-        return Response({"message": "Logged out successfully"})
+    return CustomResponse(
+        ResponseConfig(
+            message="Logged out successfully",
+            status=200,
+        ),
+    )

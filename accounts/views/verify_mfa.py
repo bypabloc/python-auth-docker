@@ -1,16 +1,13 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import ClassVar
 
 from django.utils import timezone
 from pyotp import TOTP
-from rest_framework import status
-from rest_framework.permissions import BasePermission
+from rest_framework.decorators import api_view
+from rest_framework.decorators import permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
-from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from accounts.models.custom_user import CustomUser
 from accounts.models.mfa_method import MFAMethod
@@ -20,6 +17,9 @@ from accounts.serializers.mfa_verification import (
     MFAVerification as MFAVerificationSerializer,
 )
 from accounts.utils.generate_token_for_user import generate_token_for_user
+from utils.custom_response import CustomResponse
+from utils.custom_response import ResponseConfig
+from utils.decorators.log_api import log_api
 
 
 class TypeCodes(Enum):
@@ -29,104 +29,120 @@ class TypeCodes(Enum):
     backup = 8
 
 
-class VerifyMFAView(APIView):
-    """Handle MFA verification during login process."""
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@log_api
+def post(
+    request: Request,
+) -> CustomResponse:
+    """Verify MFA code during login."""
+    serializer = MFAVerificationSerializer(data=request.data)
+    if not serializer.is_valid():
+        return CustomResponse(
+            ResponseConfig(
+                errors=serializer.errors.__dict__,
+                status=400,
+            ),
+        )
 
-    permission_classes: ClassVar[list[type[BasePermission]]] = [IsAuthenticated]
+    user = request.user
+    data: dict = request.data
+    code: str = str(data.get("code", ""))
 
-    def post(self, request: Request) -> Response:
-        """Verify MFA code during login."""
-        serializer = MFAVerificationSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        mfa_config: UserMFA = user.mfa_config
+        method: MFAMethod = mfa_config.default_method
 
-        user = request.user
-        data: dict = request.data
-        code: str = str(data.get("code", ""))
+        verified_status = False
+        verified_msg = ""
+        if method.name == "otp":
+            verified_status, verified_msg = _verify_otp(code, mfa_config)
+        else:  # email
+            verified_status, verified_msg = _verify_email(code, user, method)
 
-        try:
-            mfa_config: UserMFA = user.mfa_config
-            method: MFAMethod = mfa_config.default_method
-
-            if method.name == "otp":
-                verified = self._verify_otp(code, mfa_config)
-            else:  # email
-                verified = self._verify_email(code, user, method)
-
-            if not isinstance(verified, bool):
-                return verified  # Return error response directly
-
-            if verified:
-                # Enable MFA and generate permanent token
-                mfa_config.is_enabled = True
-                mfa_config.save()
-
-                token, _ = generate_token_for_user(user, request, is_temporary=False)
-                return Response(
-                    {"message": "MFA verification successful", "token": token}
-                )
-
-            return Response(
-                {"error": "Invalid code"}, status=status.HTTP_400_BAD_REQUEST
+        if not verified_status:
+            return CustomResponse(
+                ResponseConfig(
+                    data={"error": verified_msg},
+                    code="invalid_code",
+                    status=400,
+                ),
             )
 
-        except UserMFA.DoesNotExist:
-            return Response(
-                {"error": "MFA not configured"}, status=status.HTTP_400_BAD_REQUEST
+        mfa_config.is_enabled = True
+        mfa_config.save()
+
+        token, _ = generate_token_for_user(user, request, is_temporary=False)
+        return CustomResponse(
+            ResponseConfig(
+                data={"token": token},
+                message="MFA verification successful",
+            ),
+        )
+    except UserMFA.DoesNotExist:
+        return CustomResponse(
+            ResponseConfig(
+                errors={"error": "MFA not configured"},
+                status=400,
             )
+        )
 
-    def _verify_otp(self, code: str, mfa_config: UserMFA) -> bool:
-        """Verify OTP or backup code.
 
-        Args:
-            code: The OTP or backup code to verify
-            mfa_config: The user's MFA configuration
+def _verify_otp(
+    code: str,
+    mfa_config: UserMFA,
+) -> tuple[bool, str | None]:
+    """Verify OTP or backup code.
 
-        Returns:
-            bool: True if verification succeeds, False otherwise
-        """
-        backup_codes = mfa_config.backup_codes or []
-        if len(code) == TypeCodes.backup.value and code in backup_codes:
-            backup_codes.remove(code)
-            mfa_config.backup_codes = backup_codes
-            mfa_config.save()
-            return True
+    Args:
+        code: The OTP or backup code to verify
+        mfa_config: The user's MFA configuration
 
-        if len(code) == TypeCodes.otp.value and mfa_config.otp_secret:
-            totp = TOTP(mfa_config.otp_secret)
-            return totp.verify(code)
+    Returns:
+        bool: True if verification succeeds, False otherwise
+    """
+    backup_codes = mfa_config.backup_codes or []
+    if len(code) == TypeCodes.backup.value and code in backup_codes:
+        backup_codes.remove(code)
+        mfa_config.backup_codes = backup_codes
+        mfa_config.save()
+        return True, None
 
-        return False
+    if len(code) == TypeCodes.otp.value and mfa_config.otp_secret:
+        totp = TOTP(mfa_config.otp_secret)
+        return totp.verify(code), None
 
-    def _verify_email(
-        self, code: str, user: CustomUser, method: MFAMethod
-    ) -> Response | bool:
-        """Verify email verification code.
+    return False, "Invalid code"
 
-        Args:
-            code: The verification code to check
-            user: The user attempting verification
-            method: The MFA method being used
 
-        Returns:
-            Union[Response, bool]: Either a Response object with an error,
-            or True if verification succeeds
-        """
-        verification = MFAVerification.objects.filter(
-            user=user,
-            method=method,
-            code=code,
-            is_verified=False,
-            expires_at__gt=timezone.now(),
-        ).first()
+def _verify_email(
+    code: str,
+    user: CustomUser,
+    method: MFAMethod,
+) -> tuple[bool, str | None]:
+    """Verify email verification code.
 
-        if not verification:
-            return Response(
-                {"error": "Invalid or expired code"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+    Args:
+        code: The verification code to check
+        user: The user attempting verification
+        method: The MFA method being used
 
-        verification.is_verified = True
-        verification.verified_at = timezone.now()
-        verification.save()
-        return True
+    Returns:
+        Union[Response, bool]: Either a Response object with an error,
+        or True if verification succeeds
+    """
+    verification = MFAVerification.objects.filter(
+        user=user,
+        method=method,
+        code=code,
+        is_verified=False,
+        expires_at__gt=timezone.now(),
+    ).first()
+
+    if not verification:
+        return False, "Invalid or expired code"
+
+    verification.is_verified = True
+    verification.verified_at = timezone.now()
+    verification.save()
+    return True, None
