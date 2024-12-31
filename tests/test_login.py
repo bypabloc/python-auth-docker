@@ -15,7 +15,11 @@ from utils.logger import logger
 class TestLogin:
     """Test class for login functionality."""
 
-    def test_successful_login(self, api_client, create_verified_user):
+    def test_successful_login(
+        self,
+        api_client,
+        create_verified_user,
+    ):
         """Test successful login with verified user."""
         # Prepare
         url = reverse("accounts:login")
@@ -35,11 +39,6 @@ class TestLogin:
         # Assert
         assert response.status_code == status.HTTP_200_OK
 
-        logger.info(
-            "response.data",
-            response.data,
-        )
-
         assert response.data["code"] == "success"
         assert "data" in response.data
 
@@ -52,13 +51,14 @@ class TestLogin:
         assert user_data.get("email") == data["email"]
         assert user_data.get("is_verified") is True
 
-    def test_successful_login_with_mfa(self, api_client, create_verified_user):
+    def test_successful_login_with_mfa(
+        self,
+        api_client,
+        create_verified_user,
+    ):
         """Test successful login that requires MFA."""
-        # Create MFA method
-        email_method = MFAMethod.objects.create(
-            name="email",
-            is_active=True,
-        )
+        # Get the existing email MFA method
+        email_method = MFAMethod.objects.get(name="email")
 
         # Configure MFA for user
         UserMFA.objects.create(
@@ -84,7 +84,11 @@ class TestLogin:
         assert response_data.get("verification_type") == "mfa"
         assert response_data.get("mfa_method") == "email"
 
-    def test_unverified_user_login(self, api_client, create_unverified_user):
+    def test_unverified_user_login(
+        self,
+        api_client,
+        create_unverified_user,
+    ):
         """Test login attempt with unverified user."""
         # Prepare
         url = reverse("accounts:login")
@@ -105,30 +109,64 @@ class TestLogin:
         user_data = response_data.get("user", {})
         assert user_data.get("is_verified") is False
 
-    def test_invalid_credentials(self, api_client):
+    def test_invalid_credentials(
+        self,
+        api_client,
+    ):
         """Test login with invalid credentials."""
         url = reverse("accounts:login")
-        data = {"email": "nonexistent@test.com", "password": "wrong_password"}
+        data = {
+            "email": "nonexistent@test.com",
+            "password": "wrong_password",
+        }
 
-        response = api_client.post(url, data, format="json")
+        response = api_client.post(
+            url,
+            data,
+            format="json",
+        )
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
         assert "errors" in response.data
 
-    def test_missing_credentials(self, api_client):
+    def test_missing_credentials(
+        self,
+        api_client,
+    ):
         """Test login with missing credentials."""
         url = reverse("accounts:login")
-        data = {"email": "test@test.com"}  # Missing password
+        data = {
+            "email": "test@test.com",
+        }  # Missing password
 
-        response = api_client.post(url, data, format="json")
+        response = api_client.post(
+            url,
+            data,
+            format="json",
+        )
+
+        logger.info(
+            "response",
+            extra={
+                "response": response,
+                # "data": response.data,
+                # "status_code": response.status_code,
+            },
+        )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "errors" in response.data
 
-    def test_invalid_email_format(self, api_client):
+    def test_invalid_email_format(
+        self,
+        api_client,
+    ):
         """Test login with invalid email format."""
         url = reverse("accounts:login")
-        data = {"email": "invalid_email", "password": "test123"}
+        data = {
+            "email": "invalid_email",
+            "password": "test123",
+        }
 
         response = api_client.post(url, data, format="json")
 

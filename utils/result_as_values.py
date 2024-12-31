@@ -56,7 +56,6 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from enum import Enum
 from typing import Any
 from typing import Generic
 from typing import TypeVar
@@ -64,21 +63,11 @@ from typing import TypeVar
 T = TypeVar("T")
 
 
-class ErrorKind(Enum):
-    """Enumeración de tipos de errores posibles."""
-
-    NOT_FOUND = "not_found"
-    INVALID_INPUT = "invalid_input"
-    UNAUTHORIZED = "unauthorized"
-    INTERNAL_ERROR = "internal_error"
-    VALIDATION_ERROR = "validation_error"
-
-
 @dataclass
 class Error:
     """Estructura para representar errores."""
 
-    kind: str
+    code: str
     message: str
     details: dict[str, Any] | None = None
 
@@ -105,14 +94,14 @@ class Result(Generic[T]):
     @classmethod
     def fail(
         cls,
-        kind: str,
+        code: str,
         message: str,
         details: dict[str, Any] | None = None,
     ) -> Result[T]:
         """Crea un Result con error."""
         return cls(
             _error=Error(
-                kind,
+                code,
                 message,
                 details,
             )

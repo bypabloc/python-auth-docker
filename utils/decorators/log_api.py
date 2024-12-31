@@ -83,6 +83,10 @@ def log_api(view_func: Callable[..., Any]) -> Callable[..., Any]:
             "path_params": validated_data.get("path_params", {}),
         }
 
+        resp = view_func(request, *args, **kwargs)
+
+        log_data["response"] = resp.data
+
         try:
             logger.info(
                 "API Request",
@@ -92,6 +96,6 @@ def log_api(view_func: Callable[..., Any]) -> Callable[..., Any]:
             logger.error(f"Error al serializar log_data: {e!s}")
             logger.info(f"API Request (no serializado): {log_data!s}")
 
-        return view_func(request, *args, **kwargs)
+        return resp
 
     return wrapper

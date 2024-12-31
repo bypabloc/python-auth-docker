@@ -36,9 +36,9 @@ def validate_login_data(
     serializer = LoginSerializer(data=request_data)
     if not serializer.is_valid():
         return Result.fail(
-            "invalid_login_data",
-            "Invalid login data",
-            details=serializer.errors.__dict__,
+            code="invalid_login_data",
+            message="Invalid login data",
+            details=dict(serializer.errors),
         )
     return Result.ok(request_data)
 
@@ -50,11 +50,15 @@ def authenticate_user(
     password: str,
 ) -> Result[CustomUser]:
     """Authenticate user with provided credentials."""
-    user = authenticate(username=email or username, password=password)
+    user = authenticate(
+        username=email or username,
+        password=password,
+    )
     if not user:
         return Result.fail(
-            "invalid_credentials",
-            "Invalid credentials",
+            code="invalid_credentials",
+            message="Invalid credentials",
+            details={"error": "Invalid credentials"},
         )
     return Result.ok(user)
 
@@ -110,11 +114,17 @@ def create_mfa_verification(
         verification = MFAVerification.objects.create(
             user=user,
             method=user.mfa_config.default_method,
-            code=code,
+            code=code.value,
             expires_at=timezone.now() + timedelta(minutes=10),
             session_key=token,
         )
     except Exception as e:
+        logger.error(
+            "Error creating MFA verification",
+            extra={
+                "traceback": True,
+            },
+        )
         return Result.fail(
             "error_creating_mfa_verification",
             "Error creating MFA verification",
@@ -134,7 +144,7 @@ def create_mfa_verification(
     verification_data = {}
     if settings.SEND_VERIFICATION_CODE_IN_RESPONSE:
         verification_data["verification"] = {
-            "code": code,
+            "code": code.value,
             "expires_at": verification.expires_at,
         }
 
@@ -165,7 +175,7 @@ def handle_mfa_verification(
         )
         if result_token.is_error:
             return Result.fail(
-                kind="error_generating_token",
+                code="error_generating_token",
                 message="Error generating token",
             )
 
@@ -185,7 +195,7 @@ def handle_mfa_verification(
             )
             if result_mfa.is_error:
                 return Result.fail(
-                    kind="error_creating_mfa_verification",
+                    code="error_creating_mfa_verification",
                     message="Error creating MFA verification",
                 )
             response_data.update(result_mfa.value or {})
@@ -196,8 +206,7 @@ def handle_mfa_verification(
     except UserMFA.DoesNotExist:
         return Result.ok(
             {
-                "requires_verification": True,
-                "UserMFA.DoesNotExist": True,
+                "requires_verification": False,
             }
         )
 
@@ -266,8 +275,8 @@ def post(
             ResponseConfig(
                 message=result_validation_error.message,
                 errors=result_validation_error.details,
-                code=result_validation_error.kind,
-                status=422,
+                code=result_validation_error.code,
+                status=400,
             )
         )
 
@@ -284,7 +293,7 @@ def post(
             ResponseConfig(
                 message=result_auth_error.message,
                 errors=result_auth_error.details,
-                code=result_auth_error.kind,
+                code=result_auth_error.code,
                 status=401,
             )
         )
@@ -293,8 +302,8 @@ def post(
     user = result_auth.value
     if not user.is_verified:
         result_unverified = handle_unverified_user(
-            user,
-            request,
+            user=user,
+            request=request,
         )
         if result_unverified.is_error:
             result_unverified_error = result_unverified.error
@@ -302,13 +311,14 @@ def post(
                 ResponseConfig(
                     message=result_unverified_error.message,
                     errors=result_unverified_error.details,
-                    code=result_unverified_error.kind,
+                    code=result_unverified_error.code,
                     status=401,
                 )
             )
 
         return CustomResponse(
             ResponseConfig(
+                data=result_unverified.value,
                 message="Please verify your email first.",
                 code="email_not_verified",
                 status=400,
@@ -325,8 +335,8 @@ def post(
         return CustomResponse(
             ResponseConfig(
                 message=result_mfa_error.message,
-                code=result_mfa_error.kind,
-                status=400,
+                code=result_mfa_error.code,
+                status=200,
             )
         )
 
@@ -339,8 +349,10 @@ def post(
     if result_mfa.value["requires_verification"] and user.is_verified:
         return CustomResponse(
             ResponseConfig(
+                data=result_mfa.value,
                 message="MFA verification required",
                 code="mfa_verification_required",
+                status=200,
             )
         )
 

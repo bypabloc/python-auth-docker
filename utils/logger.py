@@ -5,6 +5,7 @@ from inspect import currentframe as inspect_currentframe
 from json import dumps as json_dumps
 from logging import getLogger as logging_getLogger
 from os import path as os_path
+from traceback import format_exc as traceback_format_exc
 
 from coloredlogs import install as coloredlogs_install
 from django.conf import settings
@@ -193,7 +194,14 @@ class Logger:
         :Last Modification:
             2024-08-30
         """
-        self._log("ERROR", message, extra)
+        if extra and "traceback" in extra:
+            extra["traceback"] = traceback_format_exc()
+
+        self._log(
+            "ERROR",
+            message,
+            extra,
+        )
 
     def critical(
         self,
