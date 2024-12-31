@@ -137,6 +137,8 @@ SEND_EMAIL = True
 # Development settings
 ENVIRONMENT = os_environ.get("ENVIRONMENT", "local")
 
+API_TRACKER_ENABLED = os_environ.get("API_TRACKER_ENABLED", "0") == "1"
+
 if ENVIRONMENT == "local":
     SEND_VERIFICATION_CODE_IN_RESPONSE = (
         os_environ.get("SEND_VERIFICATION_CODE_IN_RESPONSE", "0") == "1"

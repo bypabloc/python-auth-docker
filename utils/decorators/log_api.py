@@ -5,6 +5,7 @@ from functools import wraps
 from typing import Any
 from uuid import UUID
 
+from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from rest_framework.request import Request
 
@@ -83,18 +84,28 @@ def log_api(view_func: Callable[..., Any]) -> Callable[..., Any]:
             "path_params": validated_data.get("path_params", {}),
         }
 
+        api_tracker_enabled = settings.API_TRACKER_ENABLED
+
+        if not api_tracker_enabled:
+            return view_func(request, *args, **kwargs)
+
+        logger.info(
+            "API Request",
+            extra=log_data,
+        )
+
         resp = view_func(request, *args, **kwargs)
 
-        log_data["response"] = resp.data
+        response_data = resp.data
 
         try:
             logger.info(
-                "API Request",
-                extra=log_data,
+                "API Response",
+                extra=response_data,
             )
         except Exception as e:
             logger.error(f"Error al serializar log_data: {e!s}")
-            logger.info(f"API Request (no serializado): {log_data!s}")
+            logger.info(f"API Response (no serializado): {log_data!s}")
 
         return resp
 

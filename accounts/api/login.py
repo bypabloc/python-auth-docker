@@ -340,11 +340,6 @@ def post(
             )
         )
 
-    logger.info(
-        "MFA verification required",
-        extra=result_mfa.__dict__,
-    )
-
     # Si hay respuesta de MFA pero no es None, significa que se requiere MFA
     if result_mfa.value["requires_verification"] and user.is_verified:
         return CustomResponse(

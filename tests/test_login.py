@@ -8,7 +8,6 @@ from rest_framework import status
 
 from accounts.models.mfa_method import MFAMethod
 from accounts.models.user_mfa import UserMFA
-from utils.logger import logger
 
 
 @pytest_mark.django_db
@@ -132,30 +131,27 @@ class TestLogin:
     def test_missing_credentials(
         self,
         api_client,
+        change_settings,
     ):
-        """Test login with missing credentials."""
-        url = reverse("accounts:login")
-        data = {
-            "email": "test@test.com",
-        }  # Missing password
+        with change_settings(
+            {
+                "API_TRACKER_ENABLED": False,
+            }
+        ):
+            """Test login with missing credentials."""
+            url = reverse("accounts:login")
+            data = {
+                "email": "test@test.com",
+            }  # Missing password
 
-        response = api_client.post(
-            url,
-            data,
-            format="json",
-        )
+            response = api_client.post(
+                url,
+                data,
+                format="json",
+            )
 
-        logger.info(
-            "response",
-            extra={
-                "response": response,
-                # "data": response.data,
-                # "status_code": response.status_code,
-            },
-        )
-
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "errors" in response.data
+            assert response.status_code == status.HTTP_400_BAD_REQUEST
+            assert "errors" in response.data
 
     def test_invalid_email_format(
         self,

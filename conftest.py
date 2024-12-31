@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from warnings import simplefilter as warnings_simplefilter
 
+from django.test import override_settings
 from pytest import Config as pytestConfig
 from pytest import fixture
 from rest_framework.test import APIClient
@@ -20,6 +22,22 @@ def pytest_configure(config: pytestConfig):
 def enable_db_access_for_all_tests(db: pytestConfig) -> None:
     """Enable DB access for all tests."""
     pass
+
+
+@fixture
+def change_settings() -> Callable[[dict], override_settings]:
+    """Change Django settings during test execution.
+
+    Usage:
+        def test_example(change_settings):
+            with change_settings({'API_TRACKER_ENABLED': True, 'DEBUG': False}):
+                # test code here
+    """
+
+    def _change_settings(settings_dict: dict) -> override_settings:
+        return override_settings(**settings_dict)
+
+    return _change_settings
 
 
 @fixture
