@@ -29,8 +29,11 @@ run_tests() {
     local extra_args=${@:2}
 
     if [ -z "$test_path" ]; then
-        echo "Running all tests..."
-        docker exec ${CONTAINER_NAME} pytest -v
+        echo "Running all tests in tests directory..."
+        docker exec ${CONTAINER_NAME} pytest tests/ -v
+    elif [ -d "$test_path" ]; then
+        echo "Running all tests in directory $test_path..."
+        docker exec ${CONTAINER_NAME} pytest "$test_path" -v $extra_args
     else
         echo "Running tests in $test_path..."
         docker exec ${CONTAINER_NAME} pytest $test_path -v $extra_args
@@ -54,10 +57,11 @@ show_help() {
     echo "  restart            Restart test containers"
     echo
     echo "Examples:"
-    echo "  ./test.sh run                                  # Run all tests"
-    echo "  ./test.sh run tests/test_login.py             # Run specific test file"
-    echo "  ./test.sh run tests/test_login.py -k test_name # Run specific test"
-    echo "  ./test.sh down                                # Stop containers"
+    echo "  ./test.sh run                                         # Run all tests in tests directory"
+    echo "  ./test.sh run tests/accounts/                         # Run all tests in specific directory"
+    echo "  ./test.sh run tests/accounts/test_login.py           # Run specific test file"
+    echo "  ./test.sh run tests/accounts/test_login.py::TestLogin::test_successful_login  # Run specific test case"
+    echo "  ./test.sh down                                       # Stop containers"
 }
 
 # Procesar comandos
