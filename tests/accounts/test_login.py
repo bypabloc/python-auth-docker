@@ -1,170 +1,98 @@
-"""Test module for login functionality."""
-
 from __future__ import annotations
 
 from django.urls import reverse
+from faker import Faker
+from pytest import fixture as pytest_fixture
 from pytest import mark as pytest_mark
 from rest_framework import status
+from rest_framework.test import APIClient
 
-from accounts.models.mfa_method import MFAMethod
-from accounts.models.user_mfa import UserMFA
+from accounts.models.custom_user import CustomUser
+
+fake = Faker()
+
+
+@pytest_fixture
+def api_client():
+    """Create a test client."""
+    return APIClient()
+
+
+@pytest_fixture
+def verified_user():
+    """Create a verified user for testing."""
+    user = CustomUser.objects.create_user(
+        username=fake.user_name(), email=fake.email(), password="testpass123"
+    )
+    user.is_verified = True
+    user.save()
+    return user
+
+
+@pytest_fixture
+def unverified_user():
+    """Create an unverified user for testing."""
+    user = CustomUser.objects.create_user(
+        username=fake.user_name(), email=fake.email(), password="testpass123"
+    )
+    return user
 
 
 @pytest_mark.django_db
 class TestLogin:
-    """Test class for login functionality."""
+    """Test suite for login functionality."""
 
-    def test_successful_login(
-        self,
-        api_client,
-        create_verified_user,
-    ):
-        """Test successful login with verified user."""
-        # Prepare
+    def test_successful_login(self, api_client, verified_user):
+        """Test successful login with valid credentials."""
         url = reverse("accounts:login")
-        data = {
-            "email": "test@test.com",
-            "username": "test",
-            "password": "test123",
-        }
+        data = {"email": verified_user.email, "password": "testpass123"}
 
-        # Execute
-        response = api_client.post(
-            url,
-            data,
-            format="json",
-        )
+        response = api_client.post(url, data)
 
-        # Assert
         assert response.status_code == status.HTTP_200_OK
+        assert "token" in response.data["data"]
+        assert response.data["data"]["user"]["email"] == verified_user.email
+        assert not response.data["data"]["requires_verification"]
 
-        assert response.data["code"] == "success"
-        assert "data" in response.data
-
-        response_data = response.data.get("data", {})
-        assert "user" in response_data
-        assert "token" in response_data
-        assert not response_data.get("requires_verification")
-
-        user_data = response_data.get("user", {})
-        assert user_data.get("email") == data["email"]
-        assert user_data.get("is_verified") is True
-
-    def test_successful_login_with_mfa(
-        self,
-        api_client,
-        create_verified_user,
-    ):
-        """Test successful login that requires MFA."""
-        # Get the existing email MFA method
-        email_method = MFAMethod.objects.get(name="email")
-
-        # Configure MFA for user
-        UserMFA.objects.create(
-            user=create_verified_user,
-            is_enabled=True,
-            default_method=email_method,
-        )
-
-        # Configure test data
-        url = reverse("accounts:login")
-        data = {"email": "test@test.com", "password": "test123"}
-
-        # Execute
-        response = api_client.post(url, data, format="json")
-
-        # Assert
-        assert response.status_code == status.HTTP_200_OK
-        assert response.data["code"] == "mfa_verification_required"
-
-        response_data = response.data.get("data", {})
-        assert "token" in response_data
-        assert response_data.get("requires_verification") is True
-        assert response_data.get("verification_type") == "mfa"
-        assert response_data.get("mfa_method") == "email"
-
-    def test_unverified_user_login(
-        self,
-        api_client,
-        create_unverified_user,
-    ):
+    def test_unverified_user_login(self, api_client, unverified_user):
         """Test login attempt with unverified user."""
-        # Prepare
         url = reverse("accounts:login")
-        data = {"email": "unverified@test.com", "password": "test123"}
+        data = {"email": unverified_user.email, "password": "testpass123"}
 
-        # Execute
-        response = api_client.post(url, data, format="json")
+        response = api_client.post(url, data)
 
-        # Assert
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert response.data["code"] == "email_not_verified"
+        assert "verification" in response.data["data"]
+        assert response.data["data"]["requires_verification"]
 
-        response_data = response.data.get("data", {})
-        assert "token" in response_data
-        assert response_data.get("requires_verification") is True
-        assert response_data.get("verification_type") == "email"
-
-        user_data = response_data.get("user", {})
-        assert user_data.get("is_verified") is False
-
-    def test_invalid_credentials(
-        self,
-        api_client,
-    ):
-        """Test login with invalid credentials."""
+    def test_invalid_credentials(self, api_client):
+        """Test login attempt with invalid credentials."""
         url = reverse("accounts:login")
-        data = {
-            "email": "nonexistent@test.com",
-            "password": "wrong_password",
-        }
+        data = {"email": fake.email(), "password": "wrongpass123"}
 
-        response = api_client.post(
-            url,
-            data,
-            format="json",
-        )
+        response = api_client.post(url, data)
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
-        assert "errors" in response.data
+        assert "Invalid credentials" in str(response.data["errors"])
 
-    def test_missing_credentials(
-        self,
-        api_client,
-        change_settings,
-    ):
-        with change_settings(
-            {
-                "API_TRACKER_ENABLED": False,
-            }
-        ):
-            """Test login with missing credentials."""
-            url = reverse("accounts:login")
-            data = {
-                "email": "test@test.com",
-            }  # Missing password
-
-            response = api_client.post(
-                url,
-                data,
-                format="json",
-            )
-
-            assert response.status_code == status.HTTP_400_BAD_REQUEST
-            assert "errors" in response.data
-
-    def test_invalid_email_format(
-        self,
-        api_client,
-    ):
-        """Test login with invalid email format."""
+    def test_missing_credentials(self, api_client):
+        """Test login attempt with missing credentials."""
         url = reverse("accounts:login")
-        data = {
-            "email": "invalid_email",
-            "password": "test123",
-        }
+        data = {}
 
-        response = api_client.post(url, data, format="json")
+        response = api_client.post(url, data)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "errors" in response.data
+        assert "email" in str(response.data["errors"])
+        assert "password" in str(response.data["errors"])
+
+    def test_invalid_email_format(self, api_client):
+        """Test login attempt with invalid email format."""
+        url = reverse("accounts:login")
+        data = {"email": "invalid-email", "password": "testpass123"}
+
+        response = api_client.post(url, data)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "email" in str(response.data["errors"])

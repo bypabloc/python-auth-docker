@@ -4,55 +4,48 @@ name: python_auth_test
 
 services:
   test:
-    container_name: python_auth_test
+    container_name: app_test
     build:
       context: ..
       dockerfile: docker/Dockerfile.test
-    tty: true
-    stdin_open: true
-    command: tail -f /dev/null
     volumes:
       - ..:/app:delegated
+      - /app/__pycache__
+      - /app/*/__pycache__
     environment:
       - DEBUG=1
       - DJANGO_SETTINGS_MODULE=app.settings
-      - PYTHONPATH=/app
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
       - DB_NAME=test_db
       - DB_USER=test_user
       - DB_PASSWORD=test_password
       - DB_HOST=test_db
       - DB_PORT=5432
       - SEND_VERIFICATION_CODE_IN_RESPONSE=1
+      - ENVIRONMENT=test
+      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+      - SECRET_KEY=test-secret-key
       - SEND_EMAIL=0
-    networks:
-      - test-network
+      - TESTING=1
+    tty: true
+    command: /bin/bash
+    entrypoint: ["tail", "-f", "/dev/null"]
     depends_on:
       test_db:
         condition: service_healthy
 
   test_db:
-    container_name: python_auth_test_db
+    container_name: app_test_db
     image: postgres:16
     environment:
       - POSTGRES_DB=test_db
       - POSTGRES_USER=test_user
       - POSTGRES_PASSWORD=test_password
-    ports:
-      - "5433:5432"
-    networks:
-      - test-network
+    tmpfs:
+      - /var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U test_user -d test_db"]
+      interval: 5s
       timeout: 5s
       retries: 5
-      start_period: 30s
-    volumes:
-      - test_db_data:/var/lib/postgresql/data
-
-networks:
-  test-network:
-    driver: bridge
-
-volumes:
-  test_db_data:

@@ -145,6 +145,12 @@ if ENVIRONMENT == "local":
     )
     SEND_EMAIL = os_environ.get("SEND_EMAIL", "0") == "1"
 
+TESTING = os_environ.get("ENVIRONMENT", "") == "test"
+
+if ENVIRONMENT == "local" or TESTING:
+    SEND_VERIFICATION_CODE_IN_RESPONSE = True
+    SEND_EMAIL = os_environ.get("SEND_EMAIL", "0") == "1"
+
 # Security settings
 if not DEBUG:
     # HTTPS settings

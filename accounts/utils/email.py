@@ -32,16 +32,16 @@ def send_verification_email(
         user: CustomUser instance
         code_type: String ('registration' or 'login')
     """
-    # Eliminar códigos anteriores no usados del mismo tipo
+    # Delete any previous unused codes of the same type
     VerificationCode.objects.filter(
         user=user,
         type=code_type,
         is_used=False,
     ).delete()
 
+    # Generate new code and expiration
     result_generate_verification_code = generate_verification_code()
     expires_at = timezone.now() + timedelta(minutes=10)
-
     code = result_generate_verification_code.value
 
     # Create verification code record
@@ -52,8 +52,14 @@ def send_verification_email(
         type=code_type,
     )
 
-    subject = "Your Verification Code"
-    message = f"Your verification code is: {code}\nThis code will expire in 10 minutes."
+    # In test environment, don't try to send emails
+    if settings.TESTING:
+        return Result.ok(
+            {
+                "code": code,
+                "expires_at": expires_at,
+            }
+        )
 
     if settings.SEND_EMAIL:
         try:
@@ -65,26 +71,39 @@ def send_verification_email(
             }
 
             # Create a new SES client
-            ses_client = boto3_client(
-                **client_params,
-            )
+            ses_client = boto3_client(**client_params)
 
             send_email_params = {
                 "Source": settings.DEFAULT_FROM_EMAIL,
-                "Destination": {"ToAddresses": ["pacg1991@gmail.com"]},
+                "Destination": {"ToAddresses": [user.email]},
                 "Message": {
-                    "Subject": {"Data": subject, "Charset": "UTF-8"},
-                    "Body": {"Text": {"Data": message, "Charset": "UTF-8"}},
+                    "Subject": {
+                        "Data": "Your Verification Code",
+                        "Charset": "UTF-8",
+                    },
+                    "Body": {
+                        "Text": {
+                            "Data": (
+                                f"Your verification code is: {code}\n"
+                                f"This code will expire in 10 minutes."
+                            ),
+                            "Charset": "UTF-8",
+                        },
+                    },
                 },
             }
 
-            # Send email through SES
-            response = ses_client.send_email(**send_email_params)
-            logger.info(f"Email sent! Message ID: {response['MessageId']}")
-        except ClientError as e:
-            logger.info(f"An error occurred: {e.response['Error']['Message']}")
-            # Here you might want to handle the error appropriately,
-            # such as logging it or raising a custom exception
+            try:
+                response = ses_client.send_email(**send_email_params)
+                logger.info(f"Email sent! Message ID: {response['MessageId']}")
+            except ClientError as e:
+                logger.warning(f"Failed to send email: {e!s}")
+                if not settings.DEBUG and not settings.TESTING:
+                    raise
+        except Exception as e:
+            logger.warning(f"Email sending error: {e!s}")
+            if not settings.DEBUG and not settings.TESTING:
+                raise
 
     return Result.ok(
         {
