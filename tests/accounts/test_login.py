@@ -22,7 +22,9 @@ def api_client():
 def verified_user():
     """Create a verified user for testing."""
     user = CustomUser.objects.create_user(
-        username=fake.user_name(), email=fake.email(), password="testpass123"
+        username=fake.user_name(),
+        email=fake.email(),
+        password="testpass123",
     )
     user.is_verified = True
     user.save()
@@ -33,7 +35,9 @@ def verified_user():
 def unverified_user():
     """Create an unverified user for testing."""
     user = CustomUser.objects.create_user(
-        username=fake.user_name(), email=fake.email(), password="testpass123"
+        username=fake.user_name(),
+        email=fake.email(),
+        password="testpass123",
     )
     return user
 
@@ -45,9 +49,15 @@ class TestLogin:
     def test_successful_login(self, api_client, verified_user):
         """Test successful login with valid credentials."""
         url = reverse("accounts:login")
-        data = {"email": verified_user.email, "password": "testpass123"}
+        data = {
+            "email": verified_user.email,
+            "password": "testpass123",
+        }
 
-        response = api_client.post(url, data)
+        response = api_client.post(
+            url,
+            data,
+        )
 
         assert response.status_code == status.HTTP_200_OK
         assert "token" in response.data["data"]
@@ -57,9 +67,15 @@ class TestLogin:
     def test_unverified_user_login(self, api_client, unverified_user):
         """Test login attempt with unverified user."""
         url = reverse("accounts:login")
-        data = {"email": unverified_user.email, "password": "testpass123"}
+        data = {
+            "email": unverified_user.email,
+            "password": "testpass123",
+        }
 
-        response = api_client.post(url, data)
+        response = api_client.post(
+            url,
+            data,
+        )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert response.data["code"] == "email_not_verified"
@@ -69,9 +85,15 @@ class TestLogin:
     def test_invalid_credentials(self, api_client):
         """Test login attempt with invalid credentials."""
         url = reverse("accounts:login")
-        data = {"email": fake.email(), "password": "wrongpass123"}
+        data = {
+            "email": fake.email(),
+            "password": "wrongpass123",
+        }
 
-        response = api_client.post(url, data)
+        response = api_client.post(
+            url,
+            data,
+        )
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
         assert "Invalid credentials" in str(response.data["errors"])
@@ -81,7 +103,10 @@ class TestLogin:
         url = reverse("accounts:login")
         data = {}
 
-        response = api_client.post(url, data)
+        response = api_client.post(
+            url,
+            data,
+        )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "email" in str(response.data["errors"])
@@ -90,9 +115,15 @@ class TestLogin:
     def test_invalid_email_format(self, api_client):
         """Test login attempt with invalid email format."""
         url = reverse("accounts:login")
-        data = {"email": "invalid-email", "password": "testpass123"}
+        data = {
+            "email": "invalid-email",
+            "password": "testpass123",
+        }
 
-        response = api_client.post(url, data)
+        response = api_client.post(
+            url,
+            data,
+        )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "email" in str(response.data["errors"])
