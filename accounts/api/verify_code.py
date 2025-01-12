@@ -45,7 +45,7 @@ def post(
     if not serializer.is_valid():
         return CustomResponse(
             ResponseConfig(
-                errors=serializer.errors.__dict__,
+                errors=dict(serializer.errors),
                 status=400,
             ),
         )
