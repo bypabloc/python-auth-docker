@@ -54,7 +54,8 @@
         "out",
         ".env",
         ".serverless",
-        "__pycache__"
+        "__pycache__",
+        ".pytest_cache"
       ],
       "files": ["*.log", "*.lock", "package-lock.json", ".gitignore"],
       "advanced": {

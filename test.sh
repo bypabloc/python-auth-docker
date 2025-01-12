@@ -51,7 +51,8 @@ run_tests() {
     echo -e "${YELLOW}Ejecutando tests...${NC}"
 
     # Preparar comando base de pytest
-    local pytest_cmd="python -m pytest -v --no-header --tb=short"
+    # Añadido -x --maxfail=1 para detener en el primer fallo
+    local pytest_cmd="python -m pytest -v --no-header --tb=short -x --maxfail=1"
 
     # Agregar ruta de test si se especifica
     if [ -n "$test_path" ]; then
