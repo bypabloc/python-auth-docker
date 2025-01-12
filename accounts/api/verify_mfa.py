@@ -51,14 +51,24 @@ def post(
 
     try:
         mfa_config: UserMFA = user.mfa_config
-        method: MFAMethod = mfa_config.default_method
 
+        if not mfa_config.is_enabled:
+            return CustomResponse(
+                ResponseConfig(
+                    errors={"error": "MFA not configured"},
+                    status=400,
+                )
+            )
+
+        method: MFAMethod = mfa_config.default_method
         verified_status = False
         verified_msg = ""
         if method.name == "otp":
             verified_status, verified_msg = _verify_otp(code, mfa_config)
         else:  # email
-            verified_status, verified_msg = _verify_email(code, user, method)
+            verified_status, verified_msg = _verify_email(
+                code, user, method, request.auth  # Pasar el token actual
+            )
 
         if not verified_status:
             return CustomResponse(
@@ -130,27 +140,16 @@ def _verify_otp(
 
 
 def _verify_email(
-    code: str,
-    user: CustomUser,
-    method: MFAMethod,
+    code: str, user: CustomUser, method: MFAMethod, session_key: str
 ) -> tuple[bool, str | None]:
-    """Verify email verification code.
-
-    Args:
-        code: The verification code to check
-        user: The user attempting verification
-        method: The MFA method being used
-
-    Returns:
-        Union[Response, bool]: Either a Response object with an error,
-        or True if verification succeeds
-    """
+    """Verify email verification code."""
     verification = MFAVerification.objects.filter(
         user=user,
         method=method,
         code=code,
         is_verified=False,
         expires_at__gt=timezone.now(),
+        session_key=session_key,  # Usar el token pasado
     ).first()
 
     if not verification:

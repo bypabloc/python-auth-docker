@@ -21,8 +21,7 @@ from accounts.utils.generate_token_for_user import generate_token_for_user
 fake = Faker()
 
 
-@pytest_fixture(scope="function")
-@pytest_mark.django_db
+@pytest_fixture
 def setup_mfa_methods():
     """Ensure MFA methods exist for testing.
     Creates methods if they don't exist, returns existing ones otherwise."""
@@ -226,3 +225,92 @@ class TestMFAVerification:
         # Should still work since MFA verification is allowed with permanent token
         assert response.status_code == status.HTTP_200_OK
         assert "token" in response.data["data"]
+
+    def test_verify_with_invalid_session_key(
+        self,
+        api_client: APIClient,
+        verified_user: CustomUser,
+        temp_token: str,
+        email_config: UserMFA,
+    ):
+        """Test verification with invalid session key."""
+        url = reverse("accounts:verify-mfa")
+        api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {temp_token}")
+
+        # Create verification with wrong session key
+        verification = MFAVerification.objects.create(
+            user=verified_user,
+            method=email_config.default_method,
+            code="123456",
+            expires_at=timezone.now() + timedelta(minutes=10),
+            session_key="wrong_session_key",  # Different from temp_token
+        )
+
+        # Also create a verification with the correct session key but different code
+        verification_valid_session = MFAVerification.objects.create(
+            user=verified_user,
+            method=email_config.default_method,
+            code="789012",
+            expires_at=timezone.now() + timedelta(minutes=10),
+            session_key=temp_token,  # Correct session key
+        )
+
+        # Try to use code from wrong session
+        response = api_client.post(url, {"code": verification.code})
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.data["code"] == "invalid_code"
+        assert "Invalid or expired code" in str(response.data["data"])
+
+        # Verify both verifications still exist and are not marked as verified
+        verification.refresh_from_db()
+        verification_valid_session.refresh_from_db()
+        assert not verification.is_verified
+        assert not verification_valid_session.is_verified
+
+    def test_verify_used_backup_code(
+        self,
+        api_client: APIClient,
+        verified_user: CustomUser,
+        temp_token: str,
+        totp_config: dict,
+    ):
+        """Test verification with an already used backup code."""
+        url = reverse("accounts:verify-mfa")
+        api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {temp_token}")
+
+        # Use a backup code once
+        backup_code = totp_config["config"].backup_codes[0]
+        first_response = api_client.post(url, {"code": backup_code})
+        assert first_response.status_code == status.HTTP_200_OK
+
+        # Try to use the same backup code again
+        second_response = api_client.post(url, {"code": backup_code})
+        assert second_response.status_code == status.HTTP_400_BAD_REQUEST
+        assert second_response.data["code"] == "invalid_code"
+
+        # Verify the backup code was removed
+        totp_config["config"].refresh_from_db()
+        assert backup_code not in totp_config["config"].backup_codes
+
+    def test_verify_with_disabled_mfa(
+        self,
+        api_client: APIClient,
+        verified_user: CustomUser,
+        temp_token: str,
+        totp_config: dict,
+    ):
+        """Test verification when MFA is disabled."""
+        # Disable MFA
+        mfa_config = totp_config["config"]
+        mfa_config.is_enabled = False
+        mfa_config.save()
+
+        url = reverse("accounts:verify-mfa")
+        api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {temp_token}")
+
+        # Try to verify with TOTP code
+        response = api_client.post(url, {"code": "123456"})
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "MFA not configured" in str(response.data["errors"])

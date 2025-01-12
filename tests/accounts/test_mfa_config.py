@@ -9,9 +9,27 @@ from rest_framework.test import APIClient
 
 from accounts.models.custom_user import CustomUser
 from accounts.models.mfa_method import MFAMethod
+from accounts.models.user_mfa import UserMFA
 from accounts.utils.generate_token_for_user import generate_token_for_user
 
 fake = Faker()
+
+
+@pytest_fixture
+def setup_mfa_methods():
+    """Ensure MFA methods exist for testing.
+    Creates methods if they don't exist, returns existing ones otherwise."""
+    # Create or get OTP method
+    otp_method, _ = MFAMethod.objects.get_or_create(
+        name="otp", defaults={"is_active": True}
+    )
+
+    # Create or get Email method
+    email_method, _ = MFAMethod.objects.get_or_create(
+        name="email", defaults={"is_active": True}
+    )
+
+    return {"otp": otp_method, "email": email_method}
 
 
 @pytest_fixture
@@ -138,3 +156,73 @@ class TestMFAConfiguration:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "default_method" in str(response.data["errors"])
+
+    BACKUP_CODES_COUNT = 5
+
+    def test_configure_mfa_with_invalid_backup_codes(
+        self,
+        api_client: APIClient,
+        permanent_token: str,
+    ):
+        """Test configuring MFA with invalid backup codes."""
+        url = reverse("accounts:configure-mfa")
+        api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {permanent_token}")
+
+        # Get TOTP method
+        totp_method = MFAMethod.objects.get(name="otp")
+
+        # Try to set invalid backup codes
+        data = {
+            "is_enabled": True,
+            "default_method": totp_method.id,
+            "backup_codes": ["123", "456"],  # Invalid length
+        }
+
+        response = api_client.post(url, data)
+
+        assert response.status_code == status.HTTP_200_OK
+        # Verify backup codes were generated correctly despite invalid input
+        backup_code_length = 8
+        assert all(
+            len(code) == backup_code_length
+            for code in response.data["data"]["backup_codes"]
+        )
+        assert len(response.data["data"]["backup_codes"]) == self.BACKUP_CODES_COUNT
+
+    def test_update_existing_mfa_configuration(
+        self,
+        api_client: APIClient,
+        verified_user: CustomUser,
+        permanent_token: str,
+        setup_mfa_methods,
+    ):
+        """Test updating an existing MFA configuration."""
+        # Create initial MFA configuration with OTP
+        otp_method = MFAMethod.objects.get(name="otp")
+        initial_config = UserMFA.objects.create(
+            user=verified_user,
+            is_enabled=True,
+            default_method=otp_method,
+            otp_secret="initial_secret",
+            backup_codes=["12345678", "87654321"],
+        )
+
+        url = reverse("accounts:configure-mfa")
+        api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {permanent_token}")
+
+        # Update to email method
+        email_method = MFAMethod.objects.get(name="email")
+        data = {"is_enabled": True, "default_method": email_method.id}
+
+        response = api_client.post(url, data)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "verification" in response.data["data"]
+        assert (
+            response.data["data"]["message"] == "Verification code sent to your email"
+        )
+
+        # Verify configuration was updated
+        initial_config.refresh_from_db()
+        assert initial_config.default_method == email_method
+        assert initial_config.is_enabled is True
