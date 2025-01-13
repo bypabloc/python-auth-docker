@@ -20,9 +20,9 @@ from accounts.models.mfa_verification import MFAVerification
 from accounts.models.user_mfa import UserMFA
 from accounts.serializers.user_mfa import UserMFASerializer
 from accounts.utils.email import generate_verification_code
-from utils.custom_response import CustomResponse
-from utils.custom_response import ResponseConfig
-from utils.decorators.log_api import log_api
+from shared.custom_response import CustomResponse
+from shared.custom_response import ResponseConfig
+from shared.decorators.log_api import log_api
 
 
 @api_view(["GET", "POST"])

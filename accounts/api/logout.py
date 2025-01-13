@@ -6,10 +6,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 
 from accounts.models.user_token import UserToken
-from utils.custom_response import CustomResponse
-from utils.custom_response import ResponseConfig
-from utils.decorators.log_api import log_api
-from utils.logger import logger
+from shared.custom_response import CustomResponse
+from shared.custom_response import ResponseConfig
+from shared.decorators.log_api import log_api
+from shared.utils.logger import logger
 
 
 @api_view(["POST"])

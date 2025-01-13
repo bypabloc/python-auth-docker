@@ -12,7 +12,7 @@ from rest_framework.request import Request
 from ua_parser import user_agent_parser
 
 from accounts.models.user_token import UserToken
-from utils.result_as_values import Result
+from shared.result_as_values import Result
 
 
 def generate_token_for_user(

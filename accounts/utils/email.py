@@ -13,8 +13,8 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 
 from accounts.models.verification_code import VerificationCode
-from utils.logger import logger
-from utils.result_as_values import Result
+from shared.result_as_values import Result
+from shared.utils.logger import logger
 
 
 def generate_verification_code() -> Result[str]:

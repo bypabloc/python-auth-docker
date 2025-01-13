@@ -26,6 +26,7 @@ extend-exclude = [              # Archivos y directorios a excluir
     ".git",                    # Excluir directorio git
     ".ruff_cache",             # Excluir cache de Ruff
     "__init__.py",             # Excluir archivos de inicialización
+    "__init__.py",             # Excluir archivos de inicialización
 ]
 select = [                      # Reglas de linting a activar
     "E",    # Errores de estilo de código (pycodestyle)
@@ -113,7 +114,7 @@ suppress-dummy-args = true              # No requerir tipos en args dummy
 # Excepciones por archivo
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "D100"]          # Permitir imports no usados en __init__
-"utils/logger.py" = ["T201"]               # Permitir prints en logger
+"shared/utils/logger.py" = ["T201"]               # Permitir prints en logger
 "pre-commit-scripts/validate_imports.py" = ["T201"]  # Permitir prints en scripts
 "tests/*" = ["D", "ANN"]                   # No requerir docstrings ni tipos en tests
 "*/migrations/*" = ["D", "ANN"]            # No requerir docstrings ni tipos en migraciones

@@ -8,9 +8,9 @@ from rest_framework.request import Request
 
 from accounts.models.verification_code import VerificationCode
 from accounts.utils.email import send_verification_email
-from utils.custom_response import CustomResponse
-from utils.custom_response import ResponseConfig
-from utils.decorators.log_api import log_api
+from shared.custom_response import CustomResponse
+from shared.custom_response import ResponseConfig
+from shared.decorators.log_api import log_api
 
 
 @api_view(["POST"])

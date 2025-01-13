@@ -17,9 +17,9 @@ from accounts.serializers.mfa_verification import (
     MFAVerification as MFAVerificationSerializer,
 )
 from accounts.utils.generate_token_for_user import generate_token_for_user
-from utils.custom_response import CustomResponse
-from utils.custom_response import ResponseConfig
-from utils.decorators.log_api import log_api
+from shared.custom_response import CustomResponse
+from shared.custom_response import ResponseConfig
+from shared.decorators.log_api import log_api
 
 
 class TypeCodes(Enum):

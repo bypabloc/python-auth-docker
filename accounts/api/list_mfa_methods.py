@@ -9,9 +9,9 @@ from rest_framework.request import Request
 
 from accounts.models.mfa_method import MFAMethod
 from accounts.serializers.mfa_method import MFAMethod as MFAMethodSerializer
-from utils.custom_response import CustomResponse
-from utils.custom_response import ResponseConfig
-from utils.decorators.log_api import log_api
+from shared.custom_response import CustomResponse
+from shared.custom_response import ResponseConfig
+from shared.decorators.log_api import log_api
 
 
 @api_view(["GET"])

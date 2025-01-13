@@ -20,12 +20,12 @@ from accounts.serializers.user import User as UserSerializer
 from accounts.utils.email import generate_verification_code
 from accounts.utils.email import send_verification_email
 from accounts.utils.generate_token_for_user import generate_token_for_user
-from utils.custom_response import CustomResponse
-from utils.custom_response import ResponseConfig
-from utils.decorators.log_api import log_api
-from utils.logger import logger
-from utils.result_as_values import Result
-from utils.result_as_values import handle_result
+from shared.custom_response import CustomResponse
+from shared.custom_response import ResponseConfig
+from shared.decorators.log_api import log_api
+from shared.result_as_values import Result
+from shared.result_as_values import handle_result
+from shared.utils.logger import logger
 
 
 @handle_result
