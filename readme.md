@@ -79,11 +79,46 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-## Running Tests with test.sh
+## Docker Testing and Development Environment
+
+### Running Django Commands
+
+To run Django management commands in the test environment, use the following format:
+
+```bash
+# Start containers if they're not running
+docker-compose -f docker/docker-compose.test.yml up -d
+
+# Run makemigrations
+docker-compose -f docker/docker-compose.test.yml exec test python manage.py makemigrations
+
+# Run migrate
+docker-compose -f docker/docker-compose.test.yml exec test python manage.py migrate
+
+# Create superuser
+docker-compose -f docker/docker-compose.test.yml exec test python manage.py createsuperuser
+
+# Show migrations
+docker-compose -f docker/docker-compose.test.yml exec test python manage.py showmigrations
+```
+
+For multiple commands, you can enter the container's shell:
+
+```bash
+# Enter container shell
+docker-compose -f docker/docker-compose.test.yml exec test bash
+
+# Then run commands directly
+python manage.py makemigrations
+python manage.py migrate
+python manage.py createsuperuser
+```
+
+### Running Tests with test.sh
 
 The project includes a convenient test.sh script that helps manage test execution in Docker containers. Here's how to use it:
 
-### Basic Usage
+#### Basic Usage
 
 ```bash
 # Run all tests
@@ -96,7 +131,7 @@ The project includes a convenient test.sh script that helps manage test executio
 ./test.sh run tests/test_login.py::TestLogin::test_successful_login
 ```
 
-### Available Commands
+#### Available Commands
 
 - `run [test_path] [extra_args]`: Run tests (default command)
 - `up`: Start test containers
@@ -104,7 +139,7 @@ The project includes a convenient test.sh script that helps manage test executio
 - `restart`: Restart test containers
 - `help`: Show help message
 
-### Examples
+#### Examples
 
 ```bash
 # Start test containers
@@ -123,7 +158,7 @@ The project includes a convenient test.sh script that helps manage test executio
 ./test.sh restart
 ```
 
-### Notes
+#### Notes
 
 - The script automatically handles:
   - Starting required Docker containers
