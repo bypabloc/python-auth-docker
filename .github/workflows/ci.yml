@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    name: build
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: test_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Cache pip packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements/local.in') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements/local.in
+
+    - name: Run pre-commit hooks
+      uses: pre-commit/action@v3.0.1
+
+    - name: Run Tests
+      env:
+        DEBUG: 1
+        DJANGO_SETTINGS_MODULE: app.settings
+        PYTHONDONTWRITEBYTECODE: 1
+        PYTHONUNBUFFERED: 1
+        DB_NAME: test_db
+        DB_USER: test_user
+        DB_PASSWORD: test_password
+        DB_HOST: localhost
+        DB_PORT: 5432
+        SEND_VERIFICATION_CODE_IN_RESPONSE: 1
+        ENVIRONMENT: test
+        ALLOWED_HOSTS: localhost,127.0.0.1,0.0.0.0
+        SECRET_KEY: test-secret-key
+        SEND_EMAIL: 0
+        TESTING: 1
+      run: |
+        python manage.py migrate
+        pytest -v --tb=short -x --maxfail=1
+
+  deploy-dev:
+    name: Deploy to Development
+    needs: test
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    environment: development
+
+    steps:
+    - uses: actions/checkout@v4
+
+    # Add your deployment steps here
+    # For example, deploy to a staging server
+    - name: Deploy to development server
+      run: |
+        echo "Add your deployment commands here"
+
+  deploy-prod:
+    name: Deploy to Production
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - uses: actions/checkout@v4
+
+    # Add your deployment steps here
+    # For example, deploy to production server
+    - name: Deploy to production server
+      run: |
+        echo "Add your production deployment commands here"

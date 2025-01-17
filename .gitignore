@@ -295,3 +295,5 @@ pyrightconfig.json
 .env*
 
 notes
+
+.secrets
