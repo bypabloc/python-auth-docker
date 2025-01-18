@@ -7,7 +7,7 @@ from django.urls import path
 from app.views import HomeView
 
 urlpatterns = [
-    path("", HomeView.as_view(), name="home"),  # Ruta raíz
+    path("", HomeView.as_view(), name="home"),
     path("admin/", admin.site.urls),
     path("api/", include("accounts.urls")),
     path("api/", include("projects.urls")),
