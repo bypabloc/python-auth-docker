@@ -6,6 +6,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 
 from projects.serializers import ProjectSerializer
+from shared.cache.utils import CachePatterns
+from shared.cache.utils import invalidate_cache_patterns
 from shared.custom_response import CustomResponse
 from shared.custom_response import ResponseConfig
 from shared.decorators.log_api import log_api
@@ -36,6 +38,12 @@ def post(request: Request) -> CustomResponse:
     project.project_members.create(
         user=request.user,
         role="admin",
+    )
+
+    invalidate_cache_patterns(
+        CachePatterns.USER_PROJECTS,
+        CachePatterns.USER_STATS,
+        user_id=request.user.id,
     )
 
     return CustomResponse(

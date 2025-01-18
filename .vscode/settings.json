@@ -35,6 +35,7 @@
     "postgresql",
     "PYTHONDONTWRITEBYTECODE",
     "PYTHONUNBUFFERED",
+    "redis",
     "runserver",
     "totp"
   ],

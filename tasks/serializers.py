@@ -28,7 +28,12 @@ class TaskCommentSerializer(ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields: ClassVar[list[str]] = ["author", "created_at", "updated_at"]
+        read_only_fields: ClassVar[list[str]] = [
+            "author",
+            "task",
+            "created_at",
+            "updated_at",
+        ]
 
 
 class TaskSerializer(ModelSerializer):

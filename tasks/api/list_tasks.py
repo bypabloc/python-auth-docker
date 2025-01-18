@@ -7,6 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 
 from projects.models import Project
+from shared.cache.decorators import cached
 from shared.custom_response import CustomResponse
 from shared.custom_response import ResponseConfig
 from shared.decorators.log_api import log_api
@@ -14,13 +15,32 @@ from tasks.models import Task
 from tasks.serializers import TaskSerializer
 
 
+@cached(ttl=60, key_prefix="project_tasks")
+def get_project_tasks(
+    project_id: int,
+    filters: dict,
+) -> Task:
+    """Cache tasks with filters."""
+    tasks = Task.objects.filter(project_id=project_id)
+
+    if filters.get("status"):
+        tasks = tasks.filter(status=filters["status"])
+    if filters.get("priority"):
+        tasks = tasks.filter(priority=filters["priority"])
+
+    return tasks
+
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 @log_api
-def get(request: Request, project_id: int) -> CustomResponse:
+def get(
+    request: Request,
+    project_id: int,
+) -> CustomResponse:
     """List all tasks in a project."""
     try:
-        project = Project.objects.get(
+        Project.objects.get(
             id=project_id,
             members=request.user,
             is_active=True,
@@ -39,14 +59,14 @@ def get(request: Request, project_id: int) -> CustomResponse:
     assignee = request.GET.get("assignee")
     is_active = request.GET.get("is_active", "true").lower() == "true"
 
-    # Base queryset
-    tasks = Task.objects.filter(project=project)
+    tasks = get_project_tasks(
+        project_id=project_id,
+        filters={
+            "status": status,
+            "priority": priority,
+        },
+    )
 
-    # Apply filters
-    if status:
-        tasks = tasks.filter(status=status)
-    if priority:
-        tasks = tasks.filter(priority=priority)
     if assignee:
         if assignee == "me":
             tasks = tasks.filter(assignee=request.user)
@@ -54,6 +74,7 @@ def get(request: Request, project_id: int) -> CustomResponse:
             tasks = tasks.filter(assignee=None)
         else:
             tasks = tasks.filter(assignee__id=assignee)
+
     if is_active is not None:
         tasks = tasks.filter(is_active=is_active)
 

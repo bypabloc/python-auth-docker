@@ -5,6 +5,7 @@ from rest_framework.decorators import permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 
+from shared.cache.decorators import cached
 from shared.custom_response import CustomResponse
 from shared.custom_response import ResponseConfig
 from shared.decorators.log_api import log_api
@@ -13,16 +14,35 @@ from tasks.serializers import TaskCommentSerializer
 from tasks.serializers import TaskSerializer
 
 
+@cached(ttl=60, key_prefix="task_detail")
+def get_task_detail(task_id: int, project_id: int, user_id: int) -> Task:
+    """Cache task details.
+
+    Args:
+        task_id: ID of the task to retrieve
+        project_id: ID of the project the task belongs to
+        user_id: ID of the user requesting the task
+
+    Returns:
+        Task: The requested task object
+    """
+    return Task.objects.get(
+        id=task_id,
+        project_id=project_id,
+        project__members=user_id,
+    )
+
+
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 @log_api
 def get(request: Request, project_id: int, task_id: int) -> CustomResponse:
     """Get task details."""
     try:
-        task = Task.objects.get(
-            id=task_id,
+        task = get_task_detail(
+            task_id=task_id,
             project_id=project_id,
-            project__members=request.user,
+            user_id=request.user.id,
         )
     except Task.DoesNotExist:
         return CustomResponse(

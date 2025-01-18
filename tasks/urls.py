@@ -8,15 +8,26 @@ from tasks.api import delete_task
 from tasks.api import get_task
 from tasks.api import list_tasks_get
 from tasks.api import update_task
+from tasks.api.get_comments import get as get_comments
 
 app_name = "tasks"
 
 urlpatterns = [
-    path("projects/<int:project_id>/tasks/", list_tasks_get, name="list-tasks"),
     path(
-        "projects/<int:project_id>/tasks/create/", create_task_post, name="create-task"
+        "projects/<int:project_id>/tasks/",
+        list_tasks_get,
+        name="list-tasks",
     ),
-    path("projects/<int:project_id>/tasks/<int:task_id>/", get_task, name="get-task"),
+    path(
+        "projects/<int:project_id>/tasks/create/",
+        create_task_post,
+        name="create-task",
+    ),
+    path(
+        "projects/<int:project_id>/tasks/<int:task_id>/",
+        get_task,
+        name="get-task",
+    ),
     path(
         "projects/<int:project_id>/tasks/<int:task_id>/update/",
         update_task,
@@ -27,8 +38,15 @@ urlpatterns = [
         delete_task,
         name="delete-task",
     ),
+    # Get comments
     path(
         "projects/<int:project_id>/tasks/<int:task_id>/comments/",
+        get_comments,
+        name="get-task-comments",
+    ),
+    # Create comment - add a trailing create/
+    path(
+        "projects/<int:project_id>/tasks/<int:task_id>/comments/create/",
         create_comment_post,
         name="create-comment",
     ),
