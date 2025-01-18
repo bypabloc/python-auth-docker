@@ -41,5 +41,5 @@ pytest==8.3.4
 pytest-django==4.9.0
 pytest-cov==6.0.0
 pytest-mock==3.14.0
-pytest-xdist==3.5.0  # Para ejecución paralela
+pytest-xdist==3.6.1  # Para ejecución paralela
 faker==33.1.0
