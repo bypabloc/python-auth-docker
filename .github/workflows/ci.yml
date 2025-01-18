@@ -47,6 +47,18 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements/local.in
 
+    - name: Run Black formatter check
+      run: |
+        black . --check
+
+    - name: Run Ruff linting
+      run: |
+        ruff check .
+
+    - name: Run custom import validation
+      run: |
+        python pre-commit-scripts/validate_imports.py $(git ls-files '*.py')
+
     - name: Run pre-commit hooks
       uses: pre-commit/action@v3.0.1
 
