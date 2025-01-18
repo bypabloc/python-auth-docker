@@ -22,7 +22,7 @@ check_containers_running() {
 # Función para iniciar los contenedores
 start_containers() {
     echo -e "${YELLOW}Iniciando contenedores de test...${NC}"
-    docker-compose -f $COMPOSE_FILE up -d
+    docker-compose -f $COMPOSE_FILE up -d --build
 
     echo -e "${YELLOW}Esperando que la base de datos esté lista...${NC}"
     sleep 5

@@ -5,6 +5,8 @@ from rest_framework.decorators import permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 
+from shared.cache.utils import CachePatterns
+from shared.cache.utils import invalidate_cache_patterns
 from shared.custom_response import CustomResponse
 from shared.custom_response import ResponseConfig
 from shared.decorators.log_api import log_api
@@ -55,6 +57,21 @@ def put(request: Request, project_id: int, task_id: int) -> CustomResponse:
         )
 
     task = serializer.save()
+
+    # Invalidar múltiples patrones de caché
+    invalidate_cache_patterns(
+        CachePatterns.PROJECT_TASKS,
+        CachePatterns.TASK_DETAIL,
+        CachePatterns.PROJECT_STATS,
+        project_id=project_id,
+        task_id=task_id,
+    )
+
+    # Si hay cambio de asignación, invalidar stats de usuarios
+    if "assignee" in request.data:
+        invalidate_cache_patterns(
+            CachePatterns.USER_STATS, user_id=request.data["assignee"]
+        )
 
     return CustomResponse(
         ResponseConfig(

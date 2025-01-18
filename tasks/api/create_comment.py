@@ -1,3 +1,4 @@
+# tasks/api/create_comment.py
 from __future__ import annotations
 
 from rest_framework.decorators import api_view
@@ -5,6 +6,8 @@ from rest_framework.decorators import permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 
+from shared.cache.utils import CachePatterns
+from shared.cache.utils import invalidate_cache_patterns
 from shared.custom_response import CustomResponse
 from shared.custom_response import ResponseConfig
 from shared.decorators.log_api import log_api
@@ -22,6 +25,7 @@ def post(request: Request, project_id: int, task_id: int) -> CustomResponse:
             id=task_id,
             project_id=project_id,
             project__members=request.user,
+            project__is_active=True,  # Added check for active project
         )
     except Task.DoesNotExist:
         return CustomResponse(
@@ -40,10 +44,15 @@ def post(request: Request, project_id: int, task_id: int) -> CustomResponse:
             )
         )
 
-    # Create comment
     comment = serializer.save(
         task=task,
         author=request.user,
+    )
+
+    # Invalidar caché de comentarios
+    invalidate_cache_patterns(
+        CachePatterns.TASK_COMMENTS,
+        task_id=task_id,
     )
 
     return CustomResponse(
