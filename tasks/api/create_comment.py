@@ -6,6 +6,7 @@ from rest_framework.decorators import permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 
+from shared.cache import cache as cache_instance
 from shared.cache.utils import CachePatterns
 from shared.cache.utils import invalidate_cache_patterns
 from shared.custom_response import CustomResponse
@@ -25,7 +26,7 @@ def post(request: Request, project_id: int, task_id: int) -> CustomResponse:
             id=task_id,
             project_id=project_id,
             project__members=request.user,
-            project__is_active=True,  # Added check for active project
+            project__is_active=True,
         )
     except Task.DoesNotExist:
         return CustomResponse(
@@ -53,7 +54,11 @@ def post(request: Request, project_id: int, task_id: int) -> CustomResponse:
     invalidate_cache_patterns(
         CachePatterns.TASK_COMMENTS,
         task_id=task_id,
+        project_id=project_id,
     )
+
+    cache_key = f"task_comments_{task_id}_{project_id}"
+    cache_instance.delete(cache_key)
 
     return CustomResponse(
         ResponseConfig(

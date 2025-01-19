@@ -150,9 +150,17 @@ if ENVIRONMENT == "local":
 
 TESTING = os_environ.get("ENVIRONMENT", "") == "test"
 
+# Cache settings
+CACHE_ENABLED = os_environ.get("CACHE_ENABLED", "0") == "1"
+CACHE_BACKEND = os_environ.get("CACHE_BACKEND", "redis")  # redis, upstash, elasticache
+CACHE_TTL = int(os_environ.get("CACHE_TTL", 300))  # 5 minutes default
+
 if ENVIRONMENT == "local" or TESTING:
     SEND_VERIFICATION_CODE_IN_RESPONSE = True
     SEND_EMAIL = os_environ.get("SEND_EMAIL", "0") == "1"
+    CACHE_ENABLED = True
+    CACHE_BACKEND = "redis"
+    REDIS_URL = "redis://test_redis:6379/0"
 
 # Security settings
 if not DEBUG:
@@ -174,11 +182,6 @@ if not DEBUG:
     # Session settings
     SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
     SESSION_COOKIE_HTTPONLY = True
-
-# Cache settings
-CACHE_ENABLED = os_environ.get("CACHE_ENABLED", "0") == "1"
-CACHE_BACKEND = os_environ.get("CACHE_BACKEND", "redis")  # redis, upstash, elasticache
-CACHE_TTL = int(os_environ.get("CACHE_TTL", 300))  # 5 minutes default
 
 # Redis settings (for local/test)
 REDIS_URL = os_environ.get(

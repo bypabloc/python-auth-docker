@@ -1,7 +1,5 @@
 # TODO
 
-- Caché con redis o investigar con postgresql
-
 - Tests sin DB
 
 - Admins

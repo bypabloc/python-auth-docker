@@ -57,10 +57,10 @@ services:
       retries: 5
 
   test_redis:
-    container_name: app_test_cache
-    image: redis:latest
-    networks:
-      - test_network
+      container_name: app_test_cache
+      image: redis:latest
+      networks:
+        - test_network
 
 networks:
   test_network:
