@@ -37,7 +37,7 @@ services:
       test_db:
         condition: service_healthy
       test_redis:
-        condition: service_started
+        condition: service_healthy
 
   test_db:
     container_name: app_test_db
