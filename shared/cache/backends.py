@@ -10,6 +10,8 @@ from urllib.parse import urlparse
 from django.conf import settings
 from redis import Redis as RedisClient
 
+from shared.utils.logger import logger
+
 # Define a type variable for serializable types
 T = TypeVar(
     "T",
@@ -80,13 +82,25 @@ class RedisCacheBackend(BaseCacheBackend):
             url: The connection URL for the Redis server.
         """
         parsed_url = urlparse(url)
+
+        # Ajuste de configuración para mejor manejo de errores
         self.client = RedisClient(
             host=parsed_url.hostname or "localhost",
             port=parsed_url.port or 6379,
             username=parsed_url.username,
             password=parsed_url.password,
             decode_responses=True,
+            socket_connect_timeout=2,
+            socket_timeout=2,
+            retry_on_timeout=True,
+            health_check_interval=30,
         )
+
+        # Verificar conexión
+        try:
+            self.client.ping()
+        except Exception as e:
+            logger.warning(f"Could not connect to Redis: {e}")
 
     def get(self, key: str) -> str | int | float | bool | list | dict | None:
         """Retrieve a value from Redis cache.
@@ -120,8 +134,10 @@ class RedisCacheBackend(BaseCacheBackend):
         """
         try:
             serialized_value = json_dumps(value)
-            return bool(self.client.set(key, serialized_value, ex=ttl))
-        except Exception:
+            result = self.client.set(key, serialized_value, ex=ttl)
+            return bool(result)  # Redis retorna 'OK' para operaciones exitosas
+        except Exception as e:
+            logger.error(f"Error setting cache value: {e}", extra={"traceback": True})
             return False
 
     def delete(self, key: str) -> bool:

@@ -5,6 +5,7 @@ from typing import Any
 
 from django.conf import settings
 from faker import Faker
+from pytest import fail as pytest_fail
 from pytest import fixture as pytest_fixture
 from pytest import mark as pytest_mark
 
@@ -31,6 +32,22 @@ def sample_data() -> dict[str, Any]:
         "dict": {"key": "value"},
         "boolean": True,
     }
+
+
+@pytest_fixture(autouse=True)
+def setup_cache():
+    """Setup cache for testing."""
+    # Asegurar que el cache está habilitado para tests
+    settings.CACHE_ENABLED = True
+    settings.CACHE_BACKEND = "redis"
+    settings.REDIS_URL = "redis://test_redis:6379/0"
+
+    # Limpiar el cache antes de cada test
+    cache_instance.backend.client.flushall()
+    yield
+
+    # Limpiar después de cada test
+    cache_instance.backend.client.flushall()
 
 
 @pytest_fixture
@@ -63,11 +80,22 @@ class TestBasicCacheOperations:
     def test_set_get_operations(self, sample_data: dict):
         """Test basic set and get operations for different data types."""
         for key, value in sample_data.items():
-            # Test setting values
-            assert cache_instance.set(f"test_{key}", value)
+            # Test setting values with explicit cache prefix
+            cache_key = f"test_{key}"
 
-            # Test getting values
-            assert cache_instance.get(f"test_{key}") == value
+            # Usar try-except para mejor diagnóstico
+            try:
+                set_result = cache_instance.set(cache_key, value)
+                assert set_result is True, f"Failed to set cache for key: {cache_key}"
+
+                # Get and verify value
+                cached_value = cache_instance.get(cache_key)
+                assert (
+                    cached_value == value
+                ), f"Cache value mismatch for key: {cache_key}"
+
+            except Exception as e:
+                pytest_fail(f"Cache operation failed for {cache_key}: {e!s}")
 
     def test_delete_operation(self, sample_data: dict):
         """Test delete operation."""
