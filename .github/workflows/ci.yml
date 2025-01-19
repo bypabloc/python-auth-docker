@@ -1,3 +1,4 @@
+# .github/workflows/ci.yml
 name: CI
 
 on:
@@ -22,6 +23,16 @@ jobs:
           - 5432:5432
         options: >-
           --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -79,38 +90,9 @@ jobs:
         SECRET_KEY: test-secret-key
         SEND_EMAIL: 0
         TESTING: 1
+        CACHE_ENABLED: 1
+        CACHE_BACKEND: redis
+        REDIS_URL: redis://localhost:6379/0
       run: |
         python manage.py migrate
         pytest -v --tb=short -x --maxfail=1
-
-  deploy-dev:
-    name: Deploy to Development
-    needs: test
-    if: github.ref == 'refs/heads/develop'
-    runs-on: ubuntu-latest
-    environment: development
-
-    steps:
-    - uses: actions/checkout@v4
-
-    # Add your deployment steps here
-    # For example, deploy to a staging server
-    - name: Deploy to development server
-      run: |
-        echo "Add your deployment commands here"
-
-  deploy-prod:
-    name: Deploy to Production
-    needs: test
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    environment: production
-
-    steps:
-    - uses: actions/checkout@v4
-
-    # Add your deployment steps here
-    # For example, deploy to production server
-    - name: Deploy to production server
-      run: |
-        echo "Add your production deployment commands here"

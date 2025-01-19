@@ -28,7 +28,12 @@ start_containers() {
     sleep 5
 
     echo -e "${YELLOW}Aplicando migraciones...${NC}"
-    docker-compose -f $COMPOSE_FILE exec -T test python manage.py migrate
+    docker-compose -f $COMPOSE_FILE logs test
+    docker-compose -f $COMPOSE_FILE exec test python manage.py migrate || {
+        echo -e "${RED}Error al aplicar migraciones${NC}"
+        docker-compose -f $COMPOSE_FILE logs test
+        exit 1
+    }
 
     echo -e "${GREEN}Contenedores iniciados y configurados correctamente${NC}"
 }

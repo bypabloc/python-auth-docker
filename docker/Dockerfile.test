@@ -17,3 +17,5 @@ RUN pip install -r requirements/local.in
 
 # Install test dependencies
 RUN pip install pytest-watch pytest-cov pytest-django pytest-mock pytest-xdist faker
+
+CMD ["tail", "-f", "/dev/null"]
