@@ -1,7 +1,5 @@
 version: '3.8'
 
-name: python_auth_test
-
 services:
   test:
     container_name: app_test
@@ -69,5 +67,4 @@ services:
 
 networks:
   test_network:
-    name: python_auth_test_network
     driver: bridge

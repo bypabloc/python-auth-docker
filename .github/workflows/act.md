@@ -70,5 +70,14 @@ act push -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:full-latest --action-offli
 ```
 
 ```bash
+act push \
+  -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:full-latest \
+  --action-offline-mode \
+  -j test \
+  -W .github/workflows/ci.yml \
+  --secret-file .github/workflows/.secrets
+```
+
+```bash
 docker rmi $(docker images 'catthehacker/ubuntu*' -q) -f
 ```

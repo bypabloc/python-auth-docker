@@ -2,10 +2,10 @@ FROM python:3.12
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    # pip
     PIP_NO_CACHE_DIR=off \
     PIP_DISABLE_PIP_VERSION_CHECK=on \
-    PIP_DEFAULT_TIMEOUT=100
+    PIP_DEFAULT_TIMEOUT=100 \
+    PYTHONPATH=/app
 
 WORKDIR /app
 
@@ -17,5 +17,8 @@ RUN pip install -r requirements/local.in
 
 # Install test dependencies
 RUN pip install pytest-watch pytest-cov pytest-django pytest-mock pytest-xdist faker
+
+# Copy project files
+COPY . .
 
 CMD ["tail", "-f", "/dev/null"]
