@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Any
 from typing import ClassVar
 
 from django.contrib.auth.models import AbstractUser
@@ -19,6 +20,7 @@ class CustomUser(AbstractUser):
     has_mfa = BooleanField(
         default=False, help_text=_("Indicates if user has configured MFA")
     )
+    has_password = BooleanField(default=False)
 
     REQUIRED_FIELDS: ClassVar[list[str]] = []
 
@@ -27,3 +29,9 @@ class CustomUser(AbstractUser):
 
         verbose_name = _("user")
         verbose_name_plural = _("users")
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        """Override save to set has_password flag."""
+        if self.password and not self.password.startswith("!"):
+            self.has_password = True
+        super().save(*args, **kwargs)

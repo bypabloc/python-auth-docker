@@ -9,6 +9,7 @@ from accounts.api.logout import post as logout_post
 from accounts.api.register import post as register_post
 from accounts.api.resend_code import post as resend_code_post
 from accounts.api.verify_code import post as verify_code_post
+from accounts.api.verify_magic_link import verify_magic_link
 from accounts.api.verify_mfa import post as verify_mfa_post
 
 app_name = "accounts"
@@ -33,6 +34,11 @@ urlpatterns = [
         "verify-code/",
         verify_code_post,
         name="verify-code",
+    ),
+    path(
+        "verify-magic-link/",
+        verify_magic_link,
+        name="verify-magic-link",
     ),
     path(
         "resend-code/",

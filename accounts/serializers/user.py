@@ -17,30 +17,38 @@ class User(ModelSerializer):
         """Meta class for User."""
 
         model = CustomUser
-        fields = ("id", "email", "username", "password", "is_verified")
+        fields = ("id", "email", "password", "is_verified", "has_password")
         extra_kwargs: ClassVar[dict] = {
-            "password": {"write_only": True},
+            "password": {"write_only": True, "required": False},
             "is_verified": {"read_only": True},
+            "has_password": {"read_only": True},
         }
 
-    def validate_password(self, value: str) -> str:
+    def validate_password(self, value: str | None) -> str | None:
         """Validate password using Django's password validators."""
-        try:
-            validate_password(value)
-        except DjangoValidationError as e:
-            raise ValidationError(list(e.messages)) from e
+        if value:
+            try:
+                validate_password(value)
+            except DjangoValidationError as e:
+                raise ValidationError(list(e.messages)) from e
         return value
 
     def create(self, validated_data: dict) -> CustomUser:
         """Create a new user with proper password hashing."""
+        # Generate a temporary unusable password if none provided
+        if "password" not in validated_data:
+            validated_data["password"] = None
+
+        # Create user without password if none provided
         user = CustomUser.objects.create_user(
             email=validated_data["email"],
-            username=validated_data["username"],
+            username=validated_data.get("username", validated_data["email"]),
             password=validated_data["password"],
         )
-        return user
 
-    def to_representation(self, instance: CustomUser) -> dict:
-        """Convert User instance to dictionary, excluding sensitive fields."""
-        data = super().to_representation(instance)
-        return data
+        # If no password was provided, set an unusable password
+        if not validated_data["password"]:
+            user.set_unusable_password()
+            user.save()
+
+        return user

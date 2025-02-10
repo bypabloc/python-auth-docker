@@ -21,6 +21,12 @@ def post(
     request: Request,
 ) -> CustomResponse:
     """Create a new user."""
+    # Get base_url for magic link from request headers or settings
+    base_url = request.headers.get(
+        "X-Magic-Link-Base-URL",
+        settings.DEFAULT_MAGIC_LINK_BASE_URL,
+    )
+
     serializer = UserSerializer(data=request.data)
     if not serializer.is_valid():
         return CustomResponse(
@@ -48,6 +54,7 @@ def post(
     result_send_verification_email = send_verification_email(
         user=user,
         code_type="registration",
+        base_url=base_url,
     )
 
     data_verify_email = result_send_verification_email.value
@@ -56,15 +63,18 @@ def post(
 
     response_data = {
         "message": (
-            "User created successfully. "
-            "Please check your email for verification code."
+            "Registration successful. Please check your email for verification "
+            "instructions."
         ),
         "user": UserSerializer(user).data,
         "token": token,
     }
 
     if settings.SEND_VERIFICATION_CODE_IN_RESPONSE:
-        response_data["verification"] = data_verify_email
+        response_data["verification"] = {
+            "code": data_verify_email["code"],
+            "magic_link": data_verify_email["magic_link"],
+        }
 
     return CustomResponse(
         ResponseConfig(

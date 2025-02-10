@@ -197,3 +197,9 @@ if ENVIRONMENT == "local" or TESTING:
     CACHE_BACKEND = "redis"
 elif ENVIRONMENT == "production":
     CACHE_BACKEND = os_environ.get("CACHE_BACKEND", "upstash")
+
+# Magic Link Settings
+DEFAULT_MAGIC_LINK_BASE_URL = os_environ.get(
+    "DEFAULT_MAGIC_LINK_BASE_URL",
+    "http://localhost:3000/verify-email",
+)
