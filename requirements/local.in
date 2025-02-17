@@ -24,7 +24,7 @@ mkdocstrings==0.27.0
 mkdocstrings-python==1.13.0
 
 # Type Checking
-mypy==1.14.0
+mypy==1.15.0
 django-stubs==5.1.1
 types-requests==2.32.0.20241016
 
