@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 
 from projects.serializers import ProjectSerializer
+from shared.cache import cache as cache_instance
 from shared.cache.utils import CachePatterns
 from shared.cache.utils import invalidate_cache_patterns
 from shared.custom_response import CustomResponse
@@ -40,11 +41,18 @@ def post(request: Request) -> CustomResponse:
         role="admin",
     )
 
+    # Invalidar tanto el listado de proyectos como las estadísticas del usuario
     invalidate_cache_patterns(
         CachePatterns.USER_PROJECTS,
         CachePatterns.USER_STATS,
+        CachePatterns.PROJECT_STATS,
         user_id=request.user.id,
+        project_id=project.id,
     )
+
+    cache_instance.delete(f"user_stats_{request.user.id}")
+    cache_instance.delete(f"user_projects_{request.user.id}")
+    cache_instance.delete(f"project_stats_{project.id}")
 
     return CustomResponse(
         ResponseConfig(

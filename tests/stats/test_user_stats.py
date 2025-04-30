@@ -11,6 +11,7 @@ from rest_framework.test import APIClient
 from accounts.models import CustomUser
 from accounts.utils.generate_token_for_user import generate_token_for_user
 from projects.models import Project
+from shared.cache import cache as cache_instance
 from tasks.models import Task
 
 fake = Faker()
@@ -152,14 +153,18 @@ class TestUserStats:
         assert first_response.status_code == status.HTTP_200_OK
         initial_projects = first_response.data["data"]["total_projects"]
 
-        # Create new project
-        project = Project.objects.create(
-            name=fake.company(),
-            description=fake.text(),
-            owner=user,
-            is_active=True,
-        )
-        project.project_members.create(user=user, role="admin")
+        # Create new project through the API
+        create_project_url = reverse("projects:create-project")
+        project_data = {
+            "name": fake.company(),
+            "description": fake.text(),
+            "is_active": True,
+        }
+        response = api_client.post(create_project_url, project_data)
+        assert response.status_code == status.HTTP_201_CREATED
+
+        cache_key = f"user_stats_{user.id}"
+        cache_instance.delete(cache_key)
 
         # Second request should get updated results
         second_response = api_client.get(url)

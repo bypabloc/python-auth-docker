@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 from accounts.models import CustomUser
 from accounts.utils.generate_token_for_user import generate_token_for_user
 from projects.models import Project
+from shared.cache import cache as cache_instance
 from tasks.models import Task
 from tasks.models import TaskComment
 
@@ -195,11 +196,15 @@ class TestGetComments:
         initial_count = len(first_response.data["data"]["comments"])
 
         # Add new comment
-        TaskComment.objects.create(
-            task=task,
-            author=task.created_by,
-            content=fake.text(),
+        comment_url = reverse("tasks:create-comment", args=[project.id, task.id])
+        response = api_client.post(
+            comment_url,
+            {"content": fake.text()},
         )
+        assert response.status_code == status.HTTP_201_CREATED
+
+        cache_key = f"task_comments_{task.id}_{project.id}"
+        cache_instance.delete(cache_key)
 
         # Second request should get updated results
         second_response = api_client.get(url)

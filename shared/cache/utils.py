@@ -9,21 +9,22 @@ from shared.utils.logger import logger
 class CachePatterns:
     """Cache key patterns for invalidation."""
 
-    # Proyectos
+    # Projects
     USER_PROJECTS = "user_projects_{user_id}"
     PROJECT_DETAIL = "project_detail_{project_id}_{user_id}"
     PROJECT_STATS = "project_stats_{project_id}"
 
-    # Tareas
-    PROJECT_TASKS = "project_tasks_{project_id}"
-    TASK_DETAIL = "task_detail_{task_id}_{project_id}"
-    TASK_COMMENTS = "task_comments_{task_id}"
-
-    # Usuarios
+    # Users
     USER_STATS = "user_stats_{user_id}"
 
     # MFA
     MFA_METHODS = "mfa_methods"
+
+    # Tasks
+    PROJECT_TASKS = "project_tasks_{project_id}"
+    TASK_DETAIL = "task_detail_{task_id}_{project_id}"
+    # Actualizar el patrón para incluir project_id
+    TASK_COMMENTS = "task_comments_{task_id}_{project_id}"
 
 
 def invalidate_cache_patterns(*patterns: str, **kwargs: Any) -> None:
@@ -31,26 +32,32 @@ def invalidate_cache_patterns(*patterns: str, **kwargs: Any) -> None:
 
     Args:
         *patterns: Cache patterns to invalidate
-        **kwargs: Parameters to format patterns
+        **kwargs: Parameters to format patterns (e.g., user_id=1, project_id=2)
 
     Example:
         invalidate_cache_patterns(
             CachePatterns.USER_PROJECTS,
-            CachePatterns.PROJECT_DETAIL,
-            user_id=1,
-            project_id=2
+            CachePatterns.USER_STATS,
+            user_id=1
         )
     """
     try:
         for pattern in patterns:
             try:
-                # Format pattern with provided parameters
-                key = pattern.format(**kwargs)
-                cache_instance.delete(key)
-                logger.info(
-                    "Cache invalidated",
-                    extra={"pattern": pattern, "key": key, "params": kwargs},
-                )
+                # Format pattern with provided parameters and remove any prefix cache_
+                key = pattern.format(**kwargs).replace("cache_", "")
+
+                # Check if key deletion was successful
+                if cache_instance.delete(key):
+                    logger.info(
+                        "Cache invalidated",
+                        extra={"pattern": pattern, "key": key, "params": kwargs},
+                    )
+                else:
+                    logger.warning(
+                        "Failed to invalidate cache",
+                        extra={"pattern": pattern, "key": key, "params": kwargs},
+                    )
             except KeyError as e:
                 # Log missing parameters for pattern
                 logger.error(
