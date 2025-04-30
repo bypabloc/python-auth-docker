@@ -3,7 +3,7 @@
 # Formatting and Linting
 black==24.10.0
 ruff==0.8.4
-pre-commit==4.0.1
+pre-commit==4.1.0
 
 # Testing
 pytest==8.3.4
@@ -34,7 +34,7 @@ watchdog==6.0.0
 django-extensions==3.2.3
 
 # Pre commit
-pre-commit==4.0.1
+pre-commit==4.1.0
 
 # Testing
 pytest==8.3.4
